@@ -38,6 +38,9 @@ and cook along step by step.
 - **What can I cook?** Add the ingredients you have and every recipe is ranked by how much of it you can
   already make. Matched and missing ingredients are shown side by side, and missing ones go to your
   shopping list in one tap. The ingredient list lives in the URL, so a search can be shared.
+  Different names for the same thing match ("garbanzo beans" finds chickpea recipes).
+- **Scan your fridge.** Snap up to three photos and a vision model lists the ingredients it can see.
+  You tick what's really there before it joins the search; guesses start unticked. Needs a Gemini API key.
 - **Cook mode.** A full-screen, step-by-step view with large type. Durations in the steps ("simmer for
   40 minutes") become one-tap timers that keep running between steps and chime when done, and the
   screen stays awake while you cook.
@@ -132,6 +135,8 @@ defaults. Nothing is required for local development.
 | `EMAIL_BACKEND` | console | `django.core.mail.backends.smtp.EmailBackend` to send real mail |
 | `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | empty | SMTP login (for Gmail, use an app password) |
 | `EMAIL_VERIFICATION_REQUIRED` | on only with SMTP | Require new accounts to confirm their email |
+| `GEMINI_API_KEY` | empty | Turns on *Scan your fridge*. Each scan is one paid Gemini API call (30 per user per hour) |
+| `COOK_SCAN_MODEL` | `gemini-3.1-flash-lite` | Gemini model that reads the photos |
 
 In local development, emails (such as password-reset links) are printed in the Django console, and
 the reset page links to them directly.
@@ -181,6 +186,7 @@ Browse and try every endpoint at `/api/docs/`. The main ones:
 | `POST /api/posts/` | Create a post or recipe (multipart, with photos) |
 | `POST`/`DELETE /api/posts/{id}/like/`, `save/` | Reactions |
 | `GET /api/cook/?ingredients=rice,chicken` | Recipes ranked by the ingredients you have |
+| `POST /api/cook/scan/` | Fridge photos (multipart `images`, up to 3) to a list of ingredients to confirm |
 | `GET /api/search/?q=` | People, posts and tags |
 | `GET /api/notifications/`, `/api/conversations/` | Inbox |
 
