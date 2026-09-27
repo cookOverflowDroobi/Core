@@ -12,26 +12,20 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 import sys
 from pathlib import Path
-from .info import *
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-EMAIL_USE_TLS =EMAIL_USE_TLS
-EMAIL_HOST =EMAIL_HOST
-EMAIL_HOST_USER=EMAIL_HOST_USER
-EMAIL_HOST_PASSWORD =EMAIL_HOST_PASSWORD
-EMAIL_PORT =EMAIL_PORT
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g6uu*zswpzacx!@r(1^i@%3jq=%i8e@bb1lx^$iq=$z1pj5!1p'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-g6uu*zswpzacx!@r(1^i@%3jq=%i8e@bb1lx^$iq=$z1pj5!1p')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 
@@ -103,7 +97,7 @@ if os.getenv('DB_ENGINE') == 'postgres':
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('DB_NAME', 'cookoverflow'),
             'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', '922000'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
         }
@@ -196,8 +190,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 # EMAIL_HOST_USER = os.getenv('EMAIL_FROM_USER')
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_HOST_USER = 'cookoverflow1999@gmail.com'
-EMAIL_HOST_PASSWORD = '404729782'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_PORT = 587
 
 MESSAGE_TAGS = {
@@ -207,3 +201,4 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert-warning',
     messages.ERROR: 'alert-danger',
  }
+
