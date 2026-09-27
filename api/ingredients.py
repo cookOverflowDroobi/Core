@@ -9,6 +9,20 @@ _NON_WORD = re.compile(r"[^a-z\s'-]")
 _SPACES = re.compile(r"\s+")
 _IRREGULAR = {"leaves": "leaf", "loaves": "loaf", "halves": "half"}
 
+# Other names for the same ingredient -> the name recipes here use. Only unambiguous pairs:
+# bare "coriander" stays as it is, because it can mean the leaves or the seeds.
+_SYNONYMS = {
+    "garbanzo": "chickpea", "garbanzo beans": "chickpea", "chick peas": "chickpea",
+    "scallions": "spring onion", "green onions": "spring onion",
+    "aubergine": "eggplant", "courgette": "zucchini", "capsicum": "bell pepper",
+    "fresh coriander": "cilantro", "coriander leaves": "cilantro", "rocket": "arugula",
+    "prawns": "shrimp", "yoghurt": "yogurt", "minced beef": "ground beef", "beef mince": "ground beef",
+    "double cream": "heavy cream", "icing sugar": "powdered sugar", "confectioners sugar": "powdered sugar",
+    "cornflour": "cornstarch", "bicarbonate of soda": "baking soda", "bicarb": "baking soda",
+    "plain flour": "all-purpose flour", "all purpose flour": "all-purpose flour",
+    "chilli": "chili", "chillies": "chili", "chilies": "chili",
+}
+
 
 def _singular(word):
     if word in _IRREGULAR:
@@ -24,11 +38,22 @@ def _singular(word):
     return word
 
 
-def normalize(name):
-    """'Tomatoes ' -> 'tomato', 'Chickpeas' -> 'chickpea', 'Bay leaves' -> 'bay leaf',
-    'Akkawi  Cheese' -> 'akkawi cheese'."""
+def _clean(name):
     text = _SPACES.sub(" ", _NON_WORD.sub(" ", str(name).lower())).strip()
     return " ".join(_singular(word) for word in text.split())
+
+
+# Keys go through the same cleaning as input, so "chillies" is stored as the "chilly" it becomes.
+SYNONYMS = {_clean(other): name for other, name in _SYNONYMS.items()}
+_SYNONYM_RE = re.compile(
+    r"(?<![a-z])(" + "|".join(map(re.escape, sorted(SYNONYMS, key=len, reverse=True))) + r")(?![a-z])"
+)
+
+
+def normalize(name):
+    """'Tomatoes ' -> 'tomato', 'Chickpeas' -> 'chickpea', 'Bay leaves' -> 'bay leaf',
+    'Garbanzo beans' -> 'chickpea', 'Akkawi  Cheese' -> 'akkawi cheese'."""
+    return _SYNONYM_RE.sub(lambda match: SYNONYMS[match.group(1)], _clean(name))
 
 
 def _contains(haystack, needle):

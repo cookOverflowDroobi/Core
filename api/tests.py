@@ -17,7 +17,7 @@ from communications.models import Message
 from notifications.models import Notification
 from Timeline.models import Likes, Post
 
-from .ingredients import matches, normalize, rank_recipes
+from .ingredients import SYNONYMS, matches, normalize, rank_recipes
 
 PASSWORD = "Sup3r-secret-pw"
 
@@ -74,6 +74,21 @@ class IngredientMatchingTests(ApiTestCase):
         self.assertTrue(matches("cheese", "akkawi cheese"))
         self.assertTrue(matches("cheddar cheese", "cheddar"))
         self.assertFalse(matches("rice", "licorice"))
+
+    def test_normalize_maps_synonyms(self):
+        self.assertEqual(normalize("Garbanzo beans"), "chickpea")
+        self.assertEqual(normalize("canned garbanzos"), "canned chickpea")
+        self.assertEqual(normalize("Scallions"), "spring onion")
+        self.assertEqual(normalize("Red chillies"), "red chili")
+        self.assertEqual(normalize("ground coriander"), "ground coriander")  # seeds, not cilantro
+        for name in list(SYNONYMS) + list(SYNONYMS.values()):
+            self.assertEqual(normalize(normalize(name)), normalize(name), name)
+
+    def test_rank_matches_across_synonyms(self):
+        hummus = self.recipe(self.alice, "Hummus", ["chickpeas", "tahini", "bay leaves"])
+        ranked = rank_recipes(["garbanzo beans", "bay leaf"], Post.objects.all())
+        self.assertEqual([r["post"] for r in ranked], [hummus])
+        self.assertEqual(ranked[0]["missing"], ["tahini"])
 
     def test_rank_prefers_best_coverage_and_lists_missing(self):
         full = self.recipe(self.alice, "Egg fried rice", ["rice", "eggs", "salt"])
