@@ -230,8 +230,14 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
         'rest_framework.throttling.ScopedRateThrottle',
     ],
-    'DEFAULT_THROTTLE_RATES': {'anon': '300/hour', 'user': '10000/hour', 'auth': '30/minute'},
+    'DEFAULT_THROTTLE_RATES': {'anon': '300/hour', 'user': '10000/hour', 'auth': '30/minute', 'scan': '30/hour'},
 }
+
+# Fridge scan (POST /api/cook/scan/): a Gemini vision model reads fridge photos into an ingredient
+# list the user confirms. Off until GEMINI_API_KEY is set; each scan is one paid API call.
+COOK_SCAN_API_KEY = os.getenv('GEMINI_API_KEY', '')
+COOK_SCAN_MODEL = os.getenv('COOK_SCAN_MODEL', 'gemini-3.1-flash-lite')
+COOK_SCAN_TIMEOUT = int(os.getenv('COOK_SCAN_TIMEOUT', '30'))
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'cookOverflow API',

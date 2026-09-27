@@ -12,6 +12,7 @@ import type {
   Badges,
   Comment,
   CookResponse,
+  ScanResponse,
   Conversation,
   Notification,
   Paginated,
@@ -35,6 +36,7 @@ export const keys = {
   suggestions: ["suggestions"] as const,
   tags: ["tags"] as const,
   cook: (ingredients: string[], staples: boolean) => ["cook", ingredients, staples] as const,
+  scanStatus: ["cook-scan"] as const,
   badges: ["badges"] as const,
   notifications: ["notifications"] as const,
   conversations: ["conversations"] as const,
@@ -282,6 +284,25 @@ export function useCook(ingredients: string[], staples: boolean) {
       api<CookResponse>("/cook/", { query: { ingredients: ingredients.join(","), staples: staples ? 1 : 0 }, signal }),
     enabled: ingredients.length > 0,
     placeholderData: (previous) => previous,
+  });
+}
+
+/** Whether this server has fridge scanning set up (it needs a vision model API key). */
+export function useScanStatus() {
+  return useQuery({
+    queryKey: keys.scanStatus,
+    queryFn: () => api<{ enabled: boolean; max_images: number }>("/cook/scan/"),
+    staleTime: 10 * 60_000,
+  });
+}
+
+export function useScanFridge() {
+  return useMutation({
+    mutationFn: (photos: File[]) => {
+      const form = new FormData();
+      for (const photo of photos) form.append("images", photo);
+      return api<ScanResponse>("/cook/scan/", { method: "POST", form });
+    },
   });
 }
 

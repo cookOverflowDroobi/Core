@@ -122,6 +122,22 @@ export interface CookResponse {
   results: CookResult[];
 }
 
+/** One ingredient the fridge scan thinks it saw, for the user to confirm. */
+export interface ScanItem {
+  raw: string;
+  name: string;
+  confidence: number;
+  state: "raw" | "cooked" | "leftover" | "packaged" | "unknown";
+  source: "visible" | "label" | "inferred";
+  needs_confirm: boolean;
+}
+
+export interface ScanResponse {
+  proposed: ScanItem[];
+  rejected: { raw: string; reason: string }[];
+  warnings: string[];
+}
+
 export interface TagCount {
   name: string;
   count: number;
