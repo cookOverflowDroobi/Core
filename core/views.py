@@ -1,4 +1,7 @@
+from django.conf import settings
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.urls import reverse_lazy
 from django.db.models import Q
 
@@ -35,3 +38,17 @@ def home(request):
     # return render(request, 'home.html', {'posts': posts, 'friends': friends})
     
     return render(request, 'home.html', context)
+
+
+@ensure_csrf_cookie
+def spa(request):
+    """Serve the built React app; client-side routing takes it from there."""
+    index = settings.FRONTEND_DIST / "index.html"
+    if not index.exists():
+        return HttpResponse(
+            "<h1>cookOverflow</h1><p>The React app isn't built yet. Run <code>npm run build</code> in "
+            "<code>frontend/</code>, or use the dev server at <a href='http://localhost:5173'>localhost:5173</a>.</p>",
+            status=503,
+        )
+    return HttpResponse(index.read_text(encoding="utf-8"))
+

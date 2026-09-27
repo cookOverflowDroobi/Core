@@ -16,30 +16,28 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.templatetags.static import static as static_url
-from django.urls import path, include
+from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
 
-from Account.views import follow
+from core.views import spa
 
-urlpatterns = [
-    # Must come before Timeline's catch-all '<str:title>' route.
-    path('favicon.ico', RedirectView.as_view(url=static_url('images/logo.png'))),
-    path('admin', admin.site.urls),
+# The original Django-template UI, kept for reference while the React app replaces it.
+legacy_patterns = [
     path('', include('Account.urls')),
-
     path('', include('core.urls')),
     path('', include('Timeline.urls')),
-    # path('', include('Friends.urls')),
-    path('profile/',include('Profile.urls')),
+    path('profile/', include('Profile.urls')),
     path('messages/', include('communications.urls')),
     path('notification/', include('notifications.urls')),
+    path('', include('django.contrib.auth.urls')),
+]
 
-
-
-                  # path('resetpassword/', include('Account.urls')),
-    path('', include('django.contrib.auth.urls'))
-
-                  # path('', include('Account.urls')),
-
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns = [
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/logo.png')),
+    path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
+    path('legacy/', include(legacy_patterns)),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [
+    # Everything else is a React route.
+    re_path(r'^(?!api/|admin|legacy/|media/|static/).*$', spa, name='spa'),
+]

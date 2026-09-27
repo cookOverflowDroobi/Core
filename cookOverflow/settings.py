@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
+    'api',
     'Profile',
     'Timeline',
     'core',
@@ -52,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -158,6 +161,11 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+# The React app (frontend/) builds into frontend/dist with its assets under /static/assets/.
+FRONTEND_DIST = BASE_DIR / 'frontend' / 'dist'
+if FRONTEND_DIST.exists():
+    STATICFILES_DIRS.append(str(FRONTEND_DIST))
+
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -202,3 +210,28 @@ MESSAGE_TAGS = {
     messages.ERROR: 'alert-danger',
  }
 
+# Legacy Django-template pages live under /legacy/.
+LOGIN_URL = 'Account:Login'
+
+# React dev server (Vite) runs on :5173 and proxies /api to Django.
+CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.SessionAuthentication'],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.PagePagination',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {'anon': '300/hour', 'user': '10000/hour', 'auth': '30/minute'},
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'cookOverflow API',
+    'DESCRIPTION': 'REST API behind the cookOverflow React app.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
