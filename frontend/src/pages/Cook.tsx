@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { ChipInput } from "@/components/ChipInput";
+import { FridgeScan } from "@/components/FridgeScan";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { useDebounce, useDocumentTitle } from "@/hooks";
 import { api, errorMessage } from "@/lib/api";
-import { useCook } from "@/lib/queries";
+import { useCook, useScanStatus } from "@/lib/queries";
 import { addToShoppingList } from "@/lib/shopping";
 import type { CookResult } from "@/lib/types";
 import { cn, minutesLabel, titleCase } from "@/lib/utils";
@@ -35,6 +36,7 @@ export default function Cook() {
   const debouncedIngredients = useMemo(() => splitList(debouncedRaw), [debouncedRaw]);
 
   const cook = useCook(debouncedIngredients, staples);
+  const scanStatus = useScanStatus();
   const popular = useQuery({
     queryKey: ["ingredients", ""],
     queryFn: () => api<{ name: string }[]>("/ingredients/", { query: { limit: 16 } }),
@@ -55,6 +57,7 @@ export default function Cook() {
   };
 
   const have = new Set(ingredients.map((i) => i.toLowerCase()));
+  const addAll = (names: string[]) => update([...ingredients, ...names.filter((name) => !have.has(name))].slice(0, 30));
   const quickAdd = (popular.data ?? []).map((p) => p.name).filter((name) => !have.has(name)).slice(0, 12);
   const results = cook.data?.results ?? [];
   const perfect = results.filter((r) => r.missing.length === 0).length;
@@ -88,6 +91,10 @@ export default function Cook() {
               max={30}
             />
           </div>
+
+          {scanStatus.data?.enabled && (
+            <FridgeScan have={ingredients} onAdd={addAll} maxImages={scanStatus.data.max_images} />
+          )}
 
           {quickAdd.length > 0 && (
             <div>
