@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/fraunces";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic design tokens. Utilities like bg-surface / text-ink read these variables,
+   so the dark theme only needs to redefine them. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+
+  --color-canvas: #faf7f2;
+  --color-surface: #ffffff;
+  --color-subtle: #f3eee6;
+  --color-line: #e7dfd4;
+  --color-ink: #1f1a16;
+  --color-ink-2: #574e46;
+  --color-ink-3: #7d736a;
+  --color-brand: #c8410e;
+  --color-brand-bright: #f26b1d;
+  --color-brand-soft: #fff0e5;
+  --color-on-brand: #ffffff;
+  --color-herb: #2b8a3e;
+  --color-herb-soft: #e9f7ec;
+  --color-danger: #c92a2a;
+  --color-danger-soft: #fff0f0;
+  --color-gold: #e8a317;
+
+  --shadow-card: 0 1px 2px rgb(31 26 22 / 0.04), 0 2px 8px rgb(31 26 22 / 0.04);
+  --shadow-pop: 0 12px 40px -8px rgb(31 26 22 / 0.25);
+
+  --animate-pop: pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+  --animate-fade-up: fade-up 0.3s ease-out both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+.dark {
+  --color-canvas: #12100e;
+  --color-surface: #1b1815;
+  --color-subtle: #25211d;
+  --color-line: #342e28;
+  --color-ink: #f4efe9;
+  --color-ink-2: #c9bfb4;
+  --color-ink-3: #9a8f84;
+  --color-brand: #ff7f37;
+  --color-brand-bright: #ff9a5c;
+  --color-brand-soft: #2d1b10;
+  --color-on-brand: #1a0f08;
+  --color-herb: #5fd37a;
+  --color-herb-soft: #132a1b;
+  --color-danger: #ff6b6b;
+  --color-danger-soft: #331616;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 16px 48px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    @apply bg-brand/20;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+  dialog::backdrop {
+    background: rgb(18 16 14 / 0.55);
+    backdrop-filter: blur(3px);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-card;
+  }
+  .skeleton {
+    @apply rounded-md;
+    background: linear-gradient(90deg, var(--color-subtle) 25%, var(--color-line) 50%, var(--color-subtle) 75%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

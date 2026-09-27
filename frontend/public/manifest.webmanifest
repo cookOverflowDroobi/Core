@@ -1,0 +1,10 @@
+{
+  "name": "cookOverflow",
+  "short_name": "cookOverflow",
+  "description": "Share recipes and find what to cook with what you have.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#c8410e",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
