@@ -1,15 +1,22 @@
+import logging
+
 from django.db.models import Count, Q
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from Account.models import User
 from Timeline.models import Post, Tag
 
+from .. import scan
 from ..ingredients import PANTRY_STAPLES, rank_recipes, vocabulary
 from ..queries import posts_for, search_users
-from ..serializers import PostSerializer, UserCardSerializer
+from ..serializers import MAX_IMAGE_BYTES, PostSerializer, UserCardSerializer
 from ..utils import int_param
+
+logger = logging.getLogger(__name__)
 
 
 def recipe_posts(user):
@@ -54,6 +61,52 @@ class CookView(APIView):
                 "missing": result["missing"],
             } for result in results[:limit]],
         })
+
+
+class CookScanView(APIView):
+    """Fridge scan. `POST /cook/scan/` with 1-3 `images` returns ingredients for the user to confirm,
+    which then go to `/cook/` like typed ones. `GET` says whether scanning is set up on this server.
+    """
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    throttle_scope = "scan"
+
+    def get_throttles(self):
+        # Checking whether scanning is on is free; only real scans (paid API calls) count.
+        throttles = super().get_throttles()
+        if self.request.method == "POST":
+            return throttles
+        return [throttle for throttle in throttles if not isinstance(throttle, ScopedRateThrottle)]
+
+    def get(self, request):
+        return Response({"enabled": scan.enabled(), "max_images": scan.MAX_IMAGES})
+
+    def post(self, request):
+        if not scan.enabled():
+            return Response({"detail": "Fridge scan isn't set up on this server.", "code": "scan_disabled"},
+                            status=503)
+        uploads = request.FILES.getlist("images")
+        if not 1 <= len(uploads) <= scan.MAX_IMAGES:
+            return Response({"images": [f"Add 1 to {scan.MAX_IMAGES} photos."]}, status=400)
+        photos = []
+        for upload in uploads:
+            if upload.content_type not in scan.IMAGE_TYPES:
+                return Response({"images": [f"{upload.name} isn't a JPEG, PNG or WebP photo."]}, status=400)
+            if upload.size > MAX_IMAGE_BYTES:
+                return Response({"images": [f"{upload.name} is larger than {MAX_IMAGE_BYTES // (1024 * 1024)} MB."]},
+                                status=400)
+            try:
+                photos.append(scan.prepare(upload))
+            except ValueError as error:
+                return Response({"images": [str(error)]}, status=400)
+        try:
+            extracted = scan.extract(photos)
+        except scan.ScanError as error:
+            logger.warning("Fridge scan failed: %s", error)
+            return Response({"detail": "Couldn't read the photos right now. Try again, or type your ingredients.",
+                             "code": "scan_failed"}, status=502)
+        return Response(scan.propose(extracted))
 
 
 class IngredientsView(APIView):

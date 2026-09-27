@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, override_settings
 from django.utils.encoding import force_bytes
@@ -484,6 +485,50 @@ class FridgeScanPipelineTests(SimpleTestCase):
         self.assertEqual(odd["proposed"], [{"raw": "Milk", "name": "milk", "confidence": 0.0, "state": "unknown",
                                             "source": "inferred", "needs_confirm": True}])
         self.assertEqual(odd["warnings"], [])
+
+
+@override_settings(COOK_SCAN_API_KEY="test-key")
+class FridgeScanApiTests(ApiTestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()  # scan throttle counts
+
+    def test_scan_returns_ingredients_to_confirm(self):
+        with patch("api.scan.extract", return_value=SCAN_ANSWER) as extract:
+            response = self.as_user(self.alice).post(
+                "/api/cook/scan/", {"images": [phone_photo(), png("door.png")]}, format="multipart")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), scan.propose(SCAN_ANSWER))
+        photos = extract.call_args[0][0]
+        self.assertEqual(len(photos), 2)
+        self.assertTrue(all(photo.startswith(b"\xff\xd8") for photo in photos))  # re-encoded as JPEG
+
+    def test_scan_validates_uploads(self):
+        client = self.as_user(self.alice)
+        url = "/api/cook/scan/"
+        self.assertEqual(client.post(url, {}, format="multipart").status_code, 400)
+        self.assertEqual(client.post(url, {"images": [png(f"{i}.png") for i in range(4)]},
+                                     format="multipart").status_code, 400)
+        gif = SimpleUploadedFile("a.gif", b"GIF89a", content_type="image/gif")
+        self.assertEqual(client.post(url, {"images": [gif]}, format="multipart").status_code, 400)
+        fake = SimpleUploadedFile("a.png", b"not an image", content_type="image/png")
+        response = client.post(url, {"images": [fake]}, format="multipart")
+        self.assertEqual(response.json(), {"images": ["a.png couldn't be read as a photo."]})
+        client.logout()
+        self.assertEqual(client.post(url, {"images": [png()]}, format="multipart").status_code, 403)
+
+    def test_scan_reports_model_failures_and_being_switched_off(self):
+        client = self.as_user(self.alice)
+        with patch("api.scan.extract", side_effect=scan.ScanError("HTTP 429")), \
+                self.assertLogs("api.views.discover", "WARNING") as logs:
+            response = client.post("/api/cook/scan/", {"images": [png()]}, format="multipart")
+        self.assertEqual((response.status_code, response.json()["code"]), (502, "scan_failed"))
+        self.assertIn("HTTP 429", logs.output[0])
+        with override_settings(COOK_SCAN_API_KEY=""):
+            self.assertEqual(client.get("/api/cook/scan/").json(), {"enabled": False, "max_images": 3})
+            response = client.post("/api/cook/scan/", {"images": [png()]}, format="multipart")
+            self.assertEqual((response.status_code, response.json()["code"]), (503, "scan_disabled"))
+        self.assertEqual(client.get("/api/cook/scan/").json()["enabled"], True)
 
 
 class SiteRoutingTests(ApiTestCase):

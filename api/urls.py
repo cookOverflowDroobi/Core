@@ -36,6 +36,7 @@ urlpatterns = [
 
     path("tags/", discover.TagsView.as_view(), name="tags"),
     path("cook/", discover.CookView.as_view(), name="cook"),
+    path("cook/scan/", discover.CookScanView.as_view(), name="cook-scan"),
     path("ingredients/", discover.IngredientsView.as_view(), name="ingredients"),
     path("search/", discover.SearchView.as_view(), name="search"),
     path("stats/", discover.StatsView.as_view(), name="stats"),
