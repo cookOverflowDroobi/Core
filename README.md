@@ -1,169 +1,213 @@
+<div align="center">
+
+<img src="frontend/public/favicon.svg" width="72" height="72" alt="cookOverflow logo" />
+
 # cookOverflow
-## Incoming Social Media Platform for food Lovers , Restaurants , Our Mothers ,That Been Built with state of Art AI/ML
 
-[![N|Django](https://cldup.com/dTxpPi9lDf.thumb.png)]((https://www.djangoproject.com/))
+**Cook what you have. Share what you love.**
 
-[![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
+A social recipe platform: share dishes, find recipes that match the ingredients already in your kitchen,
+and cook along step by step.
 
-Cookoverflow is Food Social Media Platform ,specialized in Food viewing ,recipe sharing , interacting between users and using its Data for a recipe recommender system built in the backend   ,which we give the Recommender the Recipe  we have, and it gives us what to cook using machine learning approach ,  more over we built the Platform  infrastructure from Zero  that matches our requirements for the  Data collection and recipe Recommendation ,Users can share there recipes ,Posting them on our Platform , other users could like ,Comment  on the  Recipe Posts , and follow other users ,the Platform  has Friendly ,Easy to use UI , reliable , and Scalable infrastructure  make it very useful for Lovers of food in General , and Students who live away from there families  to  cook there own meals .and the Users (lovers of food ) could Communicate with each other using  simple Mobile application Messenger that make it easier for them to share experiences and get the help from Professionals (chiefs )	guiding them to the best and easy ways to make there daily meals or Parties that they could invite there friends  and share the best moments with the food they made ,with different Nationalities all over the world 
+![Django](https://img.shields.io/badge/Django-4.2-092E20?logo=django&logoColor=white)
+![Django REST Framework](https://img.shields.io/badge/DRF-3.17-A30000)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
 
-- Type some ingredients  on the Text Field 
-- See Recipes  in the PAge Easy and Simple 
-- ✨Magic ✨
+<img src="Documentation/screenshots/home.jpg" alt="The cookOverflow home feed" width="900" />
+
+</div>
+
+## Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Tech stack](#tech-stack)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Project structure](#project-structure)
+- [API](#api)
+- [Background](#background)
+- [Team and license](#team-and-license)
 
 ## Features
 
+- **What can I cook?** Add the ingredients you have and every recipe is ranked by how much of it you can
+  already make. Matched and missing ingredients are shown side by side, and missing ones go to your
+  shopping list in one tap. The ingredient list lives in the URL, so a search can be shared.
+- **Cook mode.** A full-screen, step-by-step view with large type. Durations in the steps ("simmer for
+  40 minutes") become one-tap timers that keep running between steps and chime when done, and the
+  screen stays awake while you cook.
+- **Structured recipes.** Title, cuisine, time, servings, difficulty, ingredients and ordered steps,
+  alongside photos, video and tags.
+- **A feed that explains itself.** The *For you* tab learns from your likes, saves and comments and says
+  why each post is there ("Because you like #italian"). There's also *Trending*, *Latest* and
+  *Recipes*, plus who-to-follow suggestions.
+- **Social.** Follow cooks, like, comment, save posts, get notifications and send direct messages.
+- **Search everywhere.** Press <kbd>Ctrl</kbd> + <kbd>K</kbd> (or <kbd>/</kbd>) for a command palette
+  that searches people, recipes and tags; press <kbd>N</kbd> to start a post.
+- **Built with care.** Dark mode, a mobile layout with bottom navigation, instant (optimistic) likes and
+  saves, infinite scroll, autosaved drafts, keyboard navigation, screen-reader labels and AA contrast.
 
--Founder , Data Scientist ,Infrastructure Backend Engineer Founder , Data Scientist ,Infrastructure Backend Engineer 
--cookOverflow · Full-timecookOverflow · Full-time
-Jan 2022 - Present · 5 mosJan 2022 - Present · 5 mos
--Palestinian AuthorityPalestinian Authority
--Your Ingredients, Our Recipes
--Search Engine , You Give him ingredients and it will recommend you the Top Recipes -in the Platform that we Built from Zero ,And its infrastructure Data Pipelines Deployed in Microservices architecture which enables our Users to Post ,Comment -,Like ,Follow ,Notify ,And Enjoy the Recipe sharing ,,
+## Screenshots
 
-**//The Platform is Ready to Release and Under R&D in our Free time 
-its a Platform for fun for me and my colleague and Friend Ataa Shaqour
+| What can I cook? | Cook mode |
+| --- | --- |
+| ![Recipes ranked by the ingredients you have](Documentation/screenshots/what-can-i-cook.jpg) | ![Full-screen, step-by-step cook mode](Documentation/screenshots/cook-mode.jpg) |
+| **Recipe** | **Dark mode** |
+| ![A recipe with ingredients and method](Documentation/screenshots/recipe.jpg) | ![What can I cook? in dark mode](Documentation/screenshots/dark-mode.jpg) |
+| **Command palette** | **Sign in** |
+| ![Ctrl+K search across people, recipes and tags](Documentation/screenshots/command-palette.jpg) | ![Sign-in page](Documentation/screenshots/sign-in.jpg) |
 
-cookOverflow is a simple ,Easy to Use State of Art Socail Media Platform.
-As [Dr. Mona Demedia ] writes on the [Facebook ][df1]
+<p align="center">
+  <img src="Documentation/screenshots/mobile-home.jpg" width="240" alt="Mobile home feed" />
+  <img src="Documentation/screenshots/mobile-cook.jpg" width="240" alt="Mobile What can I cook?" />
+  <img src="Documentation/screenshots/mobile-profile.jpg" width="240" alt="Mobile profile" />
+</p>
 
-> the Idea is Super WoW ,But we need to Target Every Person with What suits him 
-> so try To use ML/AL To make that Possible throw building Search Engine From Zero that Serve That Prospective 
-> 
-> 
-> 
-> 
-> 
+## Tech stack
 
+| Layer | Tools |
+| --- | --- |
+| Front end | React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router, Lucide icons |
+| Back end | Django 4.2, Django REST Framework, drf-spectacular (OpenAPI docs), WhiteNoise |
+| Database | SQLite for local development, PostgreSQL supported |
+| Tests | Django test runner, Vitest and Testing Library, Playwright driving Microsoft Edge |
 
+The React app talks to the Django REST API with session cookies and CSRF protection. In development,
+Vite serves the app on port 5173 and proxies `/api` and `/media` to Django. In production, Django
+serves the built app itself.
 
-## Tech
+## Getting started
 
-CookOverflow uses a number of open source projects to work properly:
+You need **Python 3.13** and **Node.js 20 or newer**. Commands below are for Windows PowerShell; on
+macOS or Linux use `.venv/bin/python` instead of `.venv\Scripts\python`.
 
-- [AngularJS] - HTML enhanced for web apps!
-- [Ace Editor] - awesome web-based text editor
-- [Search Algo Qury ] - Markdown parser done right. Fast and easy to extend.
-- [Twitter Bootstrap] - great UI boilerplate for modern web apps
-- [Django ] - evented I/O for the backend
-- [DataBase] - PostgreSQL
-- For AI/ML:
-Dataset: scraped Three Json File from Three websites And from our website.
-Text Processing(Spacy) and NLP: Tokenizing Using Spacy, d TF-IDF Modeling.
-Unsupervised Learning, NLP, RNN’s(Recurrent Neural Network)
-- [jQuery] - duh
+**1. Back end** (from the project root)
 
-
-
-## Installation
-
-Cookoverflow requires [Django](https://nodejs.org/) v3+ to run.
-
-Install the dependencies and devDependencies and start the server.
-
-```sh
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
+```powershell
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python manage.py migrate
+.venv\Scripts\python manage.py seed_demo_data     # optional: 10 demo cooks and 100 posts
+.venv\Scripts\python manage.py runserver
 ```
 
-For production environments...
+**2. Front end** (in `frontend/`)
 
-```sh
-Aws /Docker/Palmeto (Supercomputer for Clemson Ini 
+```powershell
+npm install
+npm run dev
 ```
 
-## Plugins
+Open <http://localhost:5173>. On localhost, the sign-in page offers a one-click demo account
+(`lina_haddad`, password `cookdemo123`, like every seeded account).
 
-Dillinger is currently extended with the following plugins.
-Instructions on how to use them in your own application are linked below.
+To run everything from Django alone, build once with `npm run build` and open <http://127.0.0.1:8000>.
 
-| Plugin | README |
-| ------ | ------ |
-| Dropbox | [plugins/dropbox/README.md][PlDb] |
-| GitHub | [plugins/github/README.md][PlGh] |
-| Google Drive | [plugins/googledrive/README.md][PlGd] |
-| OneDrive | [plugins/onedrive/README.md][PlOd] |
-| Medium | [plugins/medium/README.md][PlMe] |
-| Google Analytics | [plugins/googleanalytics/README.md][PlGa] |
+| URL | What |
+| --- | --- |
+| `/` | The React app |
+| `/api/docs/` | Interactive API documentation |
+| `/admin/` | Django admin (create an account with `manage.py createsuperuser`) |
+| `/legacy/` | The original Django-template site from 2022 |
 
-##Activity Diagram
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Activity%20Diagram.jpeg)
-##Class Daigram
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Class%20Daigram.jpeg)
-##Flow chart
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Flow%20chart%201.png)
-## Sequence diagram
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Sequence%20diagram.jpeg)
-##state Chart Diagram 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/State%20Chart%20Diagram.jpeg)
-## Use_Case_Diagram
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Use_Case_Diagram.jpeg)
-## UML
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/UML.png)
-## workFlow
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/Workflow.png)
-## Data Flow Of Search Engine Desgin 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/UMLs/RecipeDataFlowChart.png)
-## Front End Of CookOverflow
-## Direct Mess
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/DirectMessages.png)
-## Home PAge
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/HomePage.png)
-## login 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/LogIn.png)
-## notifications 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/Notification.png)
-##  Registrations 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/Registration.png)
-## Logo OF Cookoverflow
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/Screenshot%202022-05-19%20194922.png)
-## Tags
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/Tags.png)
-## Verification Email
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/VerrifivationEmail.png)
-## Edit Profile 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/editProfile1.png)
+**Demo traffic.** With the server running, `manage.py simulate_traffic --sessions 30` signs in as the
+demo cooks and browses, likes, comments, follows and sends messages through the real endpoints.
 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/updateProfile2.png)
+## Configuration
 
-## Find Friends 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/findFriends.png)
-## Forget Pass
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/forgetPassword.png)
-## Post  Preview 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/postPreview.png)
+Settings come from environment variables; [`.env.example`](.env.example) lists all of them with their
+defaults. Nothing is required for local development.
 
-## Profile 
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/userProfile1.png)
-![alt text](https://github.com/ahmaddroobi99/seniorGraduationProject2022_cookOverflow/blob/master/Documentation/Screen-FronEnd/userProile2.png)
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DJANGO_SECRET_KEY` | development key | Set a long random value in production |
+| `DJANGO_DEBUG` | `true` | Set to `false` in production |
+| `DJANGO_ALLOWED_HOSTS` | empty | Comma-separated host names |
+| `DB_ENGINE` | SQLite | `postgres` to use PostgreSQL, with `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` |
+| `EMAIL_BACKEND` | console | `django.core.mail.backends.smtp.EmailBackend` to send real mail |
+| `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | empty | SMTP login (for Gmail, use an app password) |
+| `EMAIL_VERIFICATION_REQUIRED` | on only with SMTP | Require new accounts to confirm their email |
 
-## License
+In local development, emails (such as password-reset links) are printed in the Django console, and
+the reset page links to them directly.
 
-MIT
+## Testing
 
-**Free Software,FRom Droobi And Ataa  **
-CopyRight © Clemson university  &&  © An NAjah NAtional Univerity ##  © Droobi && © Shaqour  
+```powershell
+.venv\Scripts\python manage.py test api     # API tests
+cd frontend
+npm run typecheck                           # TypeScript
+npm test                                    # unit tests (Vitest)
+npm run e2e                                 # browser tests in Microsoft Edge; both servers must be running
+```
 
-[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
+The browser tests sign in through the UI, visit every page on desktop, mobile and dark mode, create and
+delete a post, and use cook mode. They fail on any console error or failed request.
 
-   [dill]: <https://github.com/joemccann/dillinger>
-   [git-repo-url]: <https://github.com/joemccann/dillinger.git>
-   [john gruber]: <http://daringfireball.net>
-   [df1]: <http://daringfireball.net/projects/markdown/>
-   [markdown-it]: <https://github.com/markdown-it/markdown-it>
-   [Ace Editor]: <http://ace.ajax.org>
-   [node.js]: <http://nodejs.org>
-   [Twitter Bootstrap]: <http://twitter.github.com/bootstrap/>
-   [jQuery]: <http://jquery.com>
-   [@tjholowaychuk]: <http://twitter.com/tjholowaychuk>
-   [express]: <http://expressjs.com>
-   [AngularJS]: <http://angularjs.org>
-   [Gulp]: <http://gulpjs.com>
+## Project structure
 
-   [PlDb]: <https://github.com/joemccann/dillinger/tree/master/plugins/dropbox/README.md>
-   [PlGh]: <https://github.com/joemccann/dillinger/tree/master/plugins/github/README.md>
-   [PlGd]: <https://github.com/joemccann/dillinger/tree/master/plugins/googledrive/README.md>
-   [PlOd]: <https://github.com/joemccann/dillinger/tree/master/plugins/onedrive/README.md>
-   [PlMe]: <https://github.com/joemccann/dillinger/tree/master/plugins/medium/README.md>
-   [PlGa]: <https://github.com/RahulHP/dillinger/blob/master/plugins/googleanalytics/README.md>
+```text
+.
+├── api/                  REST API: views, serializers, recommendations, ingredient matching, tests
+├── frontend/             React app
+│   ├── src/pages/        One file per screen
+│   ├── src/components/   Layout, posts, composer, UI kit
+│   ├── src/lib/          API client, queries, stores, helpers
+│   └── e2e/              Browser tests
+├── Account/  Profile/  Timeline/  communications/  notifications/  core/
+│                         Django apps: models, admin, migrations and the legacy pages
+├── cookOverflow/         Django settings and URLs
+├── templates/  static/   Legacy Django-template site (served under /legacy/)
+├── AI_Search_RecommenderSystem_R&D/
+│                         Recipe datasets, scraper and recommender research
+└── Documentation/        Report, presentation, UML diagrams and screenshots
+```
+
+## API
+
+Browse and try every endpoint at `/api/docs/`. The main ones:
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /api/auth/register/`, `login/`, `logout/` | Accounts and sessions |
+| `GET /api/auth/me/` | The signed-in user |
+| `GET /api/posts/feed/` | Posts from people you follow |
+| `GET /api/posts/for-you/`, `trending/` | Recommendations |
+| `POST /api/posts/` | Create a post or recipe (multipart, with photos) |
+| `POST`/`DELETE /api/posts/{id}/like/`, `save/` | Reactions |
+| `GET /api/cook/?ingredients=rice,chicken` | Recipes ranked by the ingredients you have |
+| `GET /api/search/?q=` | People, posts and tags |
+| `GET /api/notifications/`, `/api/conversations/` | Inbox |
+
+## Background
+
+cookOverflow began in 2022 as a senior graduation project: a food social network whose own data powers
+a recipe recommender. You give it the ingredients you have, and it tells you what to cook.
+
+The research behind it is in [`AI_Search_RecommenderSystem_R&D/`](AI_Search_RecommenderSystem_R&D): three
+scraped recipe datasets, spaCy tokenization and TF-IDF modelling. The project report, presentation and
+diagrams are in [`Documentation/`](Documentation).
+
+<details>
+<summary>Design diagrams</summary>
+
+| | |
+| --- | --- |
+| Use cases ![Use case diagram](Documentation/UMLs/Use_Case_Diagram.jpeg) | Classes ![Class diagram](Documentation/UMLs/Class%20Daigram.jpeg) |
+| Activity ![Activity diagram](Documentation/UMLs/Activity%20Diagram.jpeg) | Sequence ![Sequence diagram](Documentation/UMLs/Sequence%20diagram.jpeg) |
+| States ![State chart](Documentation/UMLs/State%20Chart%20Diagram.jpeg) | Workflow ![Workflow](Documentation/UMLs/Workflow.png) |
+| Search data flow ![Recipe data flow](Documentation/UMLs/RecipeDataFlowChart.png) | Model ![UML](Documentation/UMLs/UML.png) |
+
+</details>
+
+## Team and license
+
+Built by **Ahmad Droobi** and **Ataa Shaqour**.
+
+Released under the MIT License.
+© Clemson University · © An-Najah National University · © Droobi and Shaqour
