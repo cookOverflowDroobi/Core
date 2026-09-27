@@ -96,16 +96,25 @@ WSGI_APPLICATION = 'cookOverflow.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cookoverflow',
-        'USER': 'postgres',
-        'PASSWORD': '922000',
-        'HOST': 'localhost',
-        'PORT': '5432',
+# Local dev defaults to SQLite; set DB_ENGINE=postgres to use PostgreSQL.
+if os.getenv('DB_ENGINE') == 'postgres':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'cookoverflow'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', '922000'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.local.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -176,7 +185,13 @@ EMAIL_FROM_USER = os.getenv('EMAIL_FROM_USER')
 # EMAIL_HOST_USER = 'Your Email Address'
 # EMAIL_HOST_PASSWORD = 'Your Email Address Password'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Local dev prints emails (e.g. account activation links) to the runserver console.
+# Set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend to send real mail.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Only make users click an activation link when emails are actually delivered.
+EMAIL_VERIFICATION_REQUIRED = os.getenv(
+    'EMAIL_VERIFICATION_REQUIRED', str(EMAIL_BACKEND.endswith('smtp.EmailBackend'))
+).lower() == 'true'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 # EMAIL_HOST_USER = os.getenv('EMAIL_FROM_USER')

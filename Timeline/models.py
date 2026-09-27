@@ -1,4 +1,3 @@
-from distutils.command.upload import upload
 from typing import OrderedDict
 from django.db import models
 
