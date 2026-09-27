@@ -7,9 +7,12 @@ PANTRY_STAPLES = {"salt", "water", "black pepper", "olive oil", "oil", "sugar"}
 
 _NON_WORD = re.compile(r"[^a-z\s'-]")
 _SPACES = re.compile(r"\s+")
+_IRREGULAR = {"leaves": "leaf", "loaves": "loaf", "halves": "half"}
 
 
 def _singular(word):
+    if word in _IRREGULAR:
+        return _IRREGULAR[word]
     if len(word) <= 3 or word.endswith(("ss", "us", "is")):
         return word
     if word.endswith("ies"):
@@ -22,7 +25,8 @@ def _singular(word):
 
 
 def normalize(name):
-    """'Tomatoes ' -> 'tomato', 'Chickpeas' -> 'chickpea', 'Akkawi  Cheese' -> 'akkawi cheese'."""
+    """'Tomatoes ' -> 'tomato', 'Chickpeas' -> 'chickpea', 'Bay leaves' -> 'bay leaf',
+    'Akkawi  Cheese' -> 'akkawi cheese'."""
     text = _SPACES.sub(" ", _NON_WORD.sub(" ", str(name).lower())).strip()
     return " ".join(_singular(word) for word in text.split())
 

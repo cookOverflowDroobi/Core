@@ -66,6 +66,7 @@ class IngredientMatchingTests(ApiTestCase):
     def test_normalize_handles_plurals_case_and_spacing(self):
         self.assertEqual(normalize(" Tomatoes "), "tomato")
         self.assertEqual(normalize("Chickpeas"), "chickpea")
+        self.assertEqual(normalize("Bay leaves"), "bay leaf")
         self.assertEqual(normalize("Akkawi  Cheese"), "akkawi cheese")
         self.assertEqual(normalize("hummus"), "hummus")
 
