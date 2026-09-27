@@ -1,12 +1,15 @@
 import io
+import json
 import re
 import shutil
 import tempfile
+import urllib.error
+from unittest.mock import patch
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from PIL import Image
@@ -17,6 +20,7 @@ from communications.models import Message
 from notifications.models import Notification
 from Timeline.models import Likes, Post
 
+from . import scan
 from .ingredients import SYNONYMS, matches, normalize, rank_recipes
 
 PASSWORD = "Sup3r-secret-pw"
@@ -406,6 +410,80 @@ class DiscoverTests(ApiTestCase):
         self.assertEqual(self.client.get("/api/stats/").json(),
                          {"cooks": 3, "recipes": 1, "posts": 1, "cuisines": 1})
         self.assertEqual(self.client.get("/api/health/").json(), {"status": "ok"})
+
+
+def phone_photo(size=(3000, 2000)):
+    """A JPEG like a phone takes: stored sideways with an Orientation tag, and a GPS position."""
+    exif = Image.Exif()
+    exif[0x0112] = 6  # Orientation: rotate 90 degrees to display
+    exif[0x8825] = {1: "N", 2: (31.0, 54.0, 0.0)}  # GPSInfo
+    buffer = io.BytesIO()
+    Image.new("RGB", size, (90, 160, 60)).save(buffer, format="JPEG", exif=exif)
+    return SimpleUploadedFile("fridge.jpg", buffer.getvalue(), content_type="image/jpeg")
+
+
+def gemini_response(payload):
+    return io.BytesIO(json.dumps(payload).encode())
+
+
+SCAN_ANSWER = {  # what the vision model might say about one fridge
+    "ingredients": [
+        {"name": "Grape tomatoes", "state": "raw", "confidence": 0.9, "evidence": "visible"},
+        {"name": "labneh", "state": "packaged", "confidence": 0.6, "evidence": "label"},
+        {"name": "olive oil", "state": "packaged", "confidence": 0.95, "evidence": "label"},
+        {"name": "Eggs", "state": "raw", "confidence": 0.95, "evidence": "visible"},
+        {"name": "egg", "state": "raw", "confidence": 0.9, "evidence": "visible"},
+        {"name": "roast chicken", "state": "leftover", "confidence": 0.8, "evidence": "inferred"},
+    ],
+    "warnings": ["Bottom shelf is blocked"],
+}
+
+
+@override_settings(COOK_SCAN_API_KEY="test-key", COOK_SCAN_MODEL="test-model")
+class FridgeScanPipelineTests(SimpleTestCase):
+    def test_photos_are_upright_small_and_carry_no_metadata(self):
+        prepared = Image.open(io.BytesIO(scan.prepare(phone_photo())))
+        self.assertEqual(max(prepared.size), scan.LONG_EDGE)
+        self.assertGreater(prepared.height, prepared.width)  # the Orientation tag was applied
+        self.assertEqual(len(prepared.getexif()), 0)  # no GPS, no camera details
+        with self.assertRaises(ValueError):
+            scan.prepare(SimpleUploadedFile("notes.png", b"not an image", content_type="image/png"))
+
+    def test_extract_sends_photos_to_gemini_and_reads_its_json(self):
+        answer = {"ingredients": [{"name": "egg"}], "warnings": []}
+        payload = {"candidates": [{"content": {"parts": [{"text": json.dumps(answer)}]}}]}
+        with patch("api.scan.urllib.request.urlopen", return_value=gemini_response(payload)) as urlopen:
+            self.assertEqual(scan.extract([b"one", b"two"]), answer)
+        request = urlopen.call_args[0][0]
+        self.assertTrue(request.full_url.endswith("/models/test-model:generateContent"))
+        self.assertEqual(request.get_header("X-goog-api-key"), "test-key")
+        body = json.loads(request.data)
+        self.assertEqual(len([part for part in body["contents"][0]["parts"] if "inlineData" in part]), 2)
+        self.assertEqual(body["generationConfig"]["responseMimeType"], "application/json")
+
+        blocked = {"promptFeedback": {"blockReason": "SAFETY"}}
+        with patch("api.scan.urllib.request.urlopen", return_value=gemini_response(blocked)):
+            with self.assertRaisesMessage(scan.ScanError, "SAFETY"):
+                scan.extract([b"one"])
+        with patch("api.scan.urllib.request.urlopen", side_effect=urllib.error.URLError("offline")):
+            with self.assertRaises(scan.ScanError):
+                scan.extract([b"one"])
+
+    def test_propose_normalises_names_and_flags_guesses(self):
+        data = scan.propose(SCAN_ANSWER)
+        self.assertEqual([(p["name"], p["needs_confirm"]) for p in data["proposed"]],
+                         [("egg", False), ("grape tomato", False), ("roast chicken", True), ("labneh", True)])
+        self.assertEqual(data["rejected"], [{"raw": "olive oil", "reason": "staple"},
+                                            {"raw": "egg", "reason": "duplicate"}])
+        self.assertEqual(data["warnings"], ["Bottom shelf is blocked"])
+
+    def test_propose_tolerates_odd_model_output(self):
+        self.assertEqual(scan.propose("nonsense"), {"proposed": [], "rejected": [], "warnings": []})
+        odd = scan.propose({"ingredients": [{"name": "Milk", "confidence": "high", "state": "frozen"}, "x"],
+                            "warnings": "not a list"})
+        self.assertEqual(odd["proposed"], [{"raw": "Milk", "name": "milk", "confidence": 0.0, "state": "unknown",
+                                            "source": "inferred", "needs_confirm": True}])
+        self.assertEqual(odd["warnings"], [])
 
 
 class SiteRoutingTests(ApiTestCase):
