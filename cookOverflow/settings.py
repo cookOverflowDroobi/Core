@@ -168,6 +168,10 @@ if FRONTEND_DIST.exists():
 
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if TESTING:
+    # Tests run with DEBUG off and no collectstatic manifest.
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']  # fast tests only
 
 # AUTH_USER_MODEL = 'Account.User'
 AUTH_USER_MODEL = 'Account.User'
