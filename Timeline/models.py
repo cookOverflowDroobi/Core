@@ -46,8 +46,23 @@ class Post(models.Model):
 	likes = models.IntegerField(default=0)
 	tags = models.ManyToManyField("Tag", related_name='tags')
 
+	# Optional structured recipe. A post with ingredients is treated as a recipe.
+	DIFFICULTY_CHOICES = (("easy", "Easy"), ("medium", "Medium"), ("hard", "Hard"))
+	title = models.CharField(max_length=120, blank=True)
+	cuisine = models.CharField(max_length=40, blank=True)
+	difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, blank=True)
+	cook_time = models.PositiveIntegerField(null=True, blank=True, help_text="Minutes")
+	servings = models.PositiveSmallIntegerField(null=True, blank=True)
+	ingredients = models.JSONField(default=list, blank=True)
+	steps = models.JSONField(default=list, blank=True)
+	updated_at = models.DateTimeField(null=True, blank=True)
+
 	class Meta:
 		ordering = ("-created_at",)
+
+	@property
+	def is_recipe(self):
+		return bool(self.ingredients)
 
 
 class PostImage(models.Model):
@@ -103,6 +118,10 @@ class Follow(models.Model):
 class Likes(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_like')
 	post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_like')
+	created_at = models.DateTimeField(default=now)
+
+	class Meta:
+		constraints = [models.UniqueConstraint(fields=["user", "post"], name="unique_like_per_user")]
 
 	def user_liked_post(sender, instance, *args, **kwargs):
 		like = instance
@@ -118,6 +137,16 @@ class Likes(models.Model):
 
 		notify = Notification.objects.filter(post=post, sender=sender, notification_type=1)
 		notify.delete()
+
+# Bookmarked posts ("Saved" in the app).
+class SavedPost(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_posts')
+	post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='saves')
+	created_at = models.DateTimeField(default=now)
+
+	class Meta:
+		ordering = ("-created_at",)
+		constraints = [models.UniqueConstraint(fields=["user", "post"], name="unique_save_per_user")]
 
 # adding the streamming
 class Stream(models.Model):
