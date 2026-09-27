@@ -122,10 +122,12 @@ class Command(BaseCommand):
         draw.text((128, 128), initials, font=load_font(110, bold=True), fill="white", anchor="mm")
         return self.save_image(img, Path(MEDIA_SUBDIR, "avatars", f"{username}.png"))
 
-    def make_cover(self, username, caption, colour):
+    def make_cover(self, username, colour):
+        # No text: covers are cropped on narrow screens and the avatar overlaps a corner.
         img = gradient((1200, 320), shade(colour, 0.95), shade(colour, 0.45))
-        draw = ImageDraw.Draw(img)
-        draw.text((60, 260), caption, font=load_font(40, bold=True), fill=(255, 255, 255), anchor="ls")
+        draw = ImageDraw.Draw(img, "RGBA")
+        for x, y, r in [(1040, 40, 220), (860, 300, 140), (1180, 280, 90)]:
+            draw.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 22))
         return self.save_image(img, Path(MEDIA_SUBDIR, "covers", f"{username}.jpg"), quality=85)
 
     def make_dish_image(self, dish, cuisine, colour, author):
@@ -165,7 +167,7 @@ class Command(BaseCommand):
             profile.about = about
             profile.phone = f"+{self.rng.randint(10, 99)} {self.rng.randint(100, 999)} {self.rng.randint(1000, 9999)}"
             profile.profile_image = self.make_avatar(username, first[0] + last[0], colour)
-            profile.cover_image = self.make_cover(username, f"{city}, {country}", colour)
+            profile.cover_image = self.make_cover(username, colour)
             profile.save()
             user.demo = {"cuisine": cuisine, "colour": colour}
             users.append(user)
@@ -188,12 +190,17 @@ class Command(BaseCommand):
 
             times = sorted(self.random_time(self.now - timedelta(days=42)) for _ in planned)
             for (kind, dish, dish_cuisine), created_at in zip(planned, times):
-                image = None
+                image, recipe = None, {}
                 if kind == "recipe":
                     name, course, veg, ingredients, steps = dish
-                    body = self.recipe_body(dish)
+                    body, servings, minutes = self.recipe_body(dish)
                     tags = [cuisine, course] + (["vegetarian"] if veg else [])
                     image = self.make_dish_image(name, cuisine, colour, user.username)
+                    recipe = {
+                        "title": name, "cuisine": cuisine, "ingredients": ingredients, "steps": steps,
+                        "servings": servings, "cook_time": minutes,
+                        "difficulty": "easy" if minutes <= 30 else "medium" if minutes <= 60 else "hard",
+                    }
                 elif kind == "tried":
                     name = dish[0]
                     author = by_cuisine[dish_cuisine].username
@@ -210,7 +217,7 @@ class Command(BaseCommand):
                         dish=any_dish[0], ingredient=self.rng.choice(any_dish[3]))
                     tags = ["askthecommunity"]
 
-                post = Post.objects.create(user=user, body=body, created_at=created_at)
+                post = Post.objects.create(user=user, body=body, created_at=created_at, **recipe)
                 self.add_tags(post, tags)
                 if image:
                     post.image.add(PostImage.objects.create(image=image))
@@ -224,9 +231,9 @@ class Command(BaseCommand):
         lines += [f"- {item}" for item in ingredients]
         lines += ["", "Steps:"]
         lines += [f"{i}. {step}" for i, step in enumerate(steps, 1)]
-        minutes = self.rng.choice([20, 30, 45, 60, 90, 120])
-        lines += ["", f"Serves {self.rng.randint(2, 6)} | Ready in {minutes} min"]
-        return "\n".join(lines)
+        minutes, servings = self.rng.choice([20, 30, 45, 60, 90, 120]), self.rng.randint(2, 6)
+        lines += ["", f"Serves {servings} | Ready in {minutes} min"]
+        return "\n".join(lines), servings, minutes
 
     # ---------------------------------------------------------------- follows
 
@@ -284,8 +291,9 @@ class Command(BaseCommand):
             others = [u for u in users if u != post.user]
             likers = self.rng.sample(others, self.rng.randint(*ranges[post.demo["kind"]]))
             for liker in likers:
-                Likes.objects.create(user=liker, post=post)
-                self.stamp_last_notification(self.random_time(post.created_at))
+                liked_at = self.random_time(post.created_at)
+                Likes.objects.create(user=liker, post=post, created_at=liked_at)
+                self.stamp_last_notification(liked_at)
             Post.objects.filter(pk=post.pk).update(likes=len(likers))  # keep the counter in sync
             count += len(likers)
         return count
