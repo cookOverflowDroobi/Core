@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+/env/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------- Django
+*.sqlite3
+/staticfiles/
+/cookOverflow/staticfiles/
+
+# User uploads. Only the default images and the demo data are versioned.
+/media/*
+!/media/demo/
+!/media/avatars/
+/media/avatars/*
+!/media/avatars/guest.png
+!/media/avatars/cover.png
+
+# ---------------------------------------------------------------- Secrets
+.env
+.env.*
+!.env.example
+*.pem
+/id_rsa*
+/key
+/key.pub
+/key1*
+/cookOverflow/info.py
+
+# ---------------------------------------------------------------- Front end
+node_modules/
+/frontend/dist/
+/frontend/e2e/screenshots/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------- Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------- Logs
+*.log
+npm-debug.log*
