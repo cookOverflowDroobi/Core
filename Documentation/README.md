@@ -214,7 +214,7 @@ flowchart LR
     subgraph core["cookOverflowDroobi/Core (this repository)"]
         c_master["master<br/>2022 history + 2026 rebuild"]
         c_tags["tags archive/main, archive/ataa"]
-        c_branch["feat/cook-synonyms-and-fridge-scan<br/>pushed, not merged"]
+        c_branch["feat/cook-synonyms-and-fridge-scan<br/>merged by pull request #1"]
     end
     kitchen["kitchen-2030<br/>separate local repository"]
     a_master -->|"history carried over"| c_master
@@ -443,7 +443,7 @@ flowchart LR
 
 ## I. Hardening the matcher, adding a camera
 
-A follow-up branch, `feat/cook-synonyms-and-fridge-scan` (11 commits, pushed, not yet merged), applied
+A follow-up branch, `feat/cook-synonyms-and-fridge-scan` (11 commits, merged into `master` by pull request #1), applied
 the most concrete recommendations from a review of the research.
 
 **Matching.** `normalize()` now maps unambiguous synonyms ("garbanzo beans" to chickpea, "aubergine" to
@@ -588,7 +588,7 @@ flowchart LR
 
 ## L. How it is verified
 
-| | Core (feature branch) | 2030 Kitchen |
+| | Core | 2030 Kitchen |
 | --- | --- | --- |
 | API tests | 42 (Django test runner) | 25 (pytest) |
 | Front-end tests | 18 (Vitest + Testing Library), typecheck | typecheck, lint |
