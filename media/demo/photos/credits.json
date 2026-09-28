@@ -1,0 +1,402 @@
+{
+  "maqluba": {
+    "dish": "Maqluba",
+    "file": "File:طبخة المقلوبة Maqluba (cropped).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:%D8%B7%D8%A8%D8%AE%D8%A9_%D8%A7%D9%84%D9%85%D9%82%D9%84%D9%88%D8%A8%D8%A9_Maqluba_(cropped).jpg",
+    "author": "Ramadan9044",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "musakhan": {
+    "dish": "Musakhan",
+    "file": "File:Mushakhan Dish.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mushakhan_Dish.jpg",
+    "author": "Kokaly",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "mujaddara": {
+    "dish": "Mujaddara",
+    "file": "File:Mujaddara.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mujaddara.jpg",
+    "author": "Bazel",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "knafeh": {
+    "dish": "Knafeh",
+    "file": "File:Knafeh khishneh.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Knafeh_khishneh.jpg",
+    "author": "白と赤茶",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "fattoush": {
+    "dish": "Fattoush",
+    "file": "File:Fattoush.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Fattoush.JPG",
+    "author": "Own work",
+    "license": "Public domain",
+    "license_url": ""
+  },
+  "mansaf": {
+    "dish": "Mansaf",
+    "file": "File:Préparation du mansaf-Jordanie (8).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pr%C3%A9paration_du_mansaf-Jordanie_(8).jpg",
+    "author": "Ji-Elle",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "galayet-bandora": {
+    "dish": "Galayet Bandora",
+    "file": "File:قلاية بندورة.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:%D9%82%D9%84%D8%A7%D9%8A%D8%A9_%D8%A8%D9%86%D8%AF%D9%88%D8%B1%D8%A9.jpg",
+    "author": "Rania al-Bahara",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "zarb": {
+    "dish": "Zarb",
+    "file": "File:PikiWiki Israel 16546 Barbecue.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_16546_Barbecue.jpg",
+    "author": "בלאל אבו הדיב",
+    "license": "Public domain",
+    "license_url": ""
+  },
+  "mutabbal": {
+    "dish": "Mutabbal",
+    "file": "File:Mutabbel.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mutabbel.jpg",
+    "author": "Bazel",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "hareeseh": {
+    "dish": "Hareeseh",
+    "file": "File:Basboosa.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Basboosa.jpg",
+    "author": "stu_spivack",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "pasta-alla-norma": {
+    "dish": "Pasta alla Norma",
+    "file": "File:Pasta alla Norma (2563876877).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pasta_alla_Norma_(2563876877).jpg",
+    "author": "Paoletta S.",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "risotto-ai-funghi": {
+    "dish": "Risotto ai Funghi",
+    "file": "File:Mushroom Risotto (4789415965).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mushroom_Risotto_(4789415965).jpg",
+    "author": "Katrin Gilger",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "pizza-margherita": {
+    "dish": "Pizza Margherita",
+    "file": "File:Margherita Originale.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Margherita_Originale.JPG",
+    "author": "Mario56",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "tiramisu": {
+    "dish": "Tiramisu",
+    "file": "File:Dolce Tiramisù monoporzione.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Dolce_Tiramis%C3%B9_monoporzione.jpg",
+    "author": "Anna.Massini",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0"
+  },
+  "minestrone": {
+    "dish": "Minestrone",
+    "file": "File:Minestrone soup.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Minestrone_soup.jpg",
+    "author": "Katrin Morenz from Aachen, Deutschland",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "chicken-katsu-curry": {
+    "dish": "Chicken Katsu Curry",
+    "file": "File:Pumpkin Katsu Curry and Chicken Katsu Curry - Sunoso.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pumpkin_Katsu_Curry_and_Chicken_Katsu_Curry_-_Sunoso.jpg",
+    "author": "Andy Li",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "miso-soup": {
+    "dish": "Miso Soup",
+    "file": "File:Pholiota microspora miso soup 001.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pholiota_microspora_miso_soup_001.jpg",
+    "author": "Ocdp",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "okonomiyaki": {
+    "dish": "Okonomiyaki",
+    "file": "File:Okonomiyaki 001.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Okonomiyaki_001.jpg",
+    "author": "ume-y",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "tamagoyaki": {
+    "dish": "Tamagoyaki",
+    "file": "File:鳥焼き居酒屋 (39394233682).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:%E9%B3%A5%E7%84%BC%E3%81%8D%E5%B1%85%E9%85%92%E5%B1%8B_(39394233682).jpg",
+    "author": "極地狐",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "onigiri": {
+    "dish": "Onigiri",
+    "file": "File:Onigiri combo meal from Minneapolis, Minnesota.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Onigiri_combo_meal_from_Minneapolis,_Minnesota.jpg",
+    "author": "Funknendai",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "paella-valenciana": {
+    "dish": "Paella Valenciana",
+    "file": "File:01 Paella Valenciana original.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:01_Paella_Valenciana_original.jpg",
+    "author": "Jan Harenburg",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "tortilla-espanola": {
+    "dish": "Tortilla Espanola",
+    "file": "File:Tortilla de Patatas (Corte transversal).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tortilla_de_Patatas_(Corte_transversal).jpg",
+    "author": "Tamorlan",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "gazpacho": {
+    "dish": "Gazpacho",
+    "file": "File:Gazpacho Cazuela Barro.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Gazpacho_Cazuela_Barro.jpg",
+    "author": "Bocadorada",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "patatas-bravas": {
+    "dish": "Patatas Bravas",
+    "file": "File:Patatas bravas. Tapa de bar (España).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Patatas_bravas._Tapa_de_bar_(Espa%C3%B1a).jpg",
+    "author": "Juan Emilio Prades Bel",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0"
+  },
+  "churros-con-chocolate": {
+    "dish": "Churros con Chocolate",
+    "file": "File:Chocolate con churros de lazo.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Chocolate_con_churros_de_lazo.jpg",
+    "author": "LWY from Pasadena, USA",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "chana-masala": {
+    "dish": "Chana Masala",
+    "file": "File:Chana Masala - Mohammed - Spice Of Life 2024-05-27.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Chana_Masala_-_Mohammed_-_Spice_Of_Life_2024-05-27.jpg",
+    "author": "Andy Li",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "butter-chicken": {
+    "dish": "Butter Chicken",
+    "file": "File:Chicken makhani.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Chicken_makhani.jpg",
+    "author": "stu_spivack",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "masala-dosa": {
+    "dish": "Masala Dosa",
+    "file": "File:Masala dosa 01.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Masala_dosa_01.jpg",
+    "author": "Marajozkee",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "palak-paneer": {
+    "dish": "Palak Paneer",
+    "file": "File:Palakpaneer Rayagada Odisha 0009.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Palakpaneer_Rayagada_Odisha_0009.jpg",
+    "author": "Lopanayak",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "mango-lassi": {
+    "dish": "Mango Lassi",
+    "file": "File:Lassi with malai and barfi.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Lassi_with_malai_and_barfi.jpg",
+    "author": "Ravi Dwivedi",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "ratatouille": {
+    "dish": "Ratatouille",
+    "file": "File:Ratatouille.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Ratatouille.jpg",
+    "author": "Marcus Guimarães",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "quiche-lorraine": {
+    "dish": "Quiche Lorraine",
+    "file": "File:Quiche lorraine 01.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Quiche_lorraine_01.JPG",
+    "author": "Arnaud 25",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "coq-au-vin": {
+    "dish": "Coq au Vin",
+    "file": "File:Coq au vin, Linden.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Coq_au_vin,_Linden.jpg",
+    "author": "Gerda Arendt",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "crepes": {
+    "dish": "Crepes",
+    "file": "File:Crepes dsc07085.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Crepes_dsc07085.jpg",
+    "author": "David Monniaux",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "french-onion-soup": {
+    "dish": "French Onion Soup",
+    "file": "File:Mmm...onion soup (5344349906).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mmm...onion_soup_(5344349906).jpg",
+    "author": "jeffreyw",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "jollof-rice": {
+    "dish": "Jollof Rice",
+    "file": "File:Jollof rice with vegetable.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Jollof_rice_with_vegetable.jpg",
+    "author": "Segun Famisa",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "egusi-soup": {
+    "dish": "Egusi Soup",
+    "file": "File:Pot of Egusi soup.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pot_of_Egusi_soup.jpg",
+    "author": "Bukky658",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "suya": {
+    "dish": "Suya",
+    "file": "File:SuyavarietiesTX.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:SuyavarietiesTX.JPG",
+    "author": "WhisperToMe",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "puff-puff": {
+    "dish": "Puff-Puff",
+    "file": "File:Puff-Puff 2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Puff-Puff_2.jpg",
+    "author": "Albertoblaq",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "moi-moi": {
+    "dish": "Moi Moi",
+    "file": "File:Moi- moi with stew ,rice with stew.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Moi-_moi_with_stew_,rice_with_stew.jpg",
+    "author": "MOIBARDE",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "koshari": {
+    "dish": "Koshari",
+    "file": "File:Egyptian food Koshary.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Egyptian_food_Koshary.jpg",
+    "author": "Dina Said",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "ful-medames": {
+    "dish": "Ful Medames",
+    "file": "File:Foul Medamas.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Foul_Medamas.jpg",
+    "author": "avlxyz",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+  },
+  "molokhia": {
+    "dish": "Molokhia",
+    "file": "File:Molokheya hi res.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Molokheya_hi_res.JPG",
+    "author": "Yosi I",
+    "license": "CC BY 2.5",
+    "license_url": "https://creativecommons.org/licenses/by/2.5"
+  },
+  "taameya": {
+    "dish": "Ta'ameya",
+    "file": "File:Fava falafel (6138972309).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fava_falafel_(6138972309).jpg",
+    "author": "Leslie Seaton from Seattle, WA, USA",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "om-ali": {
+    "dish": "Om Ali",
+    "file": "File:Umm Ali.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Umm_Ali.JPG",
+    "author": "Miansari66",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "texas-brisket": {
+    "dish": "Texas Brisket",
+    "file": "File:Smoked Brisket with smoke ring.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Smoked_Brisket_with_smoke_ring.jpg",
+    "author": "Johnsparks75",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "mac-and-cheese": {
+    "dish": "Mac and Cheese",
+    "file": "File:Baked macaroni and cheese 1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Baked_macaroni_and_cheese_1.jpg",
+    "author": "Martin",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "buttermilk-pancakes": {
+    "dish": "Buttermilk Pancakes",
+    "file": "File:Buttermilk pancakes from a recipe by Darina Allen.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Buttermilk_pancakes_from_a_recipe_by_Darina_Allen.jpg",
+    "author": "Lajmmoore",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "chili-con-carne": {
+    "dish": "Chili con Carne",
+    "file": "File:Bowl of chili.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Bowl_of_chili.jpg",
+    "author": "Carstor",
+    "license": "CC BY-SA 2.5",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.5"
+  },
+  "pecan-pie": {
+    "dish": "Pecan Pie",
+    "file": "File:Pecan pie, November 2010.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pecan_pie,_November_2010.jpg",
+    "author": "Joe Hakim",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  }
+}
