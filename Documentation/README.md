@@ -22,6 +22,11 @@ draw at each step, and it is precise about what was built, when, and by whom.
 - [D. The quiet years](#d-the-quiet-years)
 - [E. The rebuild](#e-the-rebuild)
 - [F. The pivot: from similarity to feasibility](#f-the-pivot-from-similarity-to-feasibility)
+- [G. Social ranking](#g-social-ranking)
+- [H. Blast radius](#h-blast-radius)
+- [I. Hardening the matcher, adding a camera](#i-hardening-the-matcher-adding-a-camera)
+- [J. The 2030 Kitchen](#j-the-2030-kitchen)
+- [K. One engine, many inputs](#k-one-engine-many-inputs)
 
 ## The whole story on one line
 
@@ -358,4 +363,219 @@ flowchart LR
     m -->|"otherwise"| no["no match"]
     inv1["invariant: 'cheese' satisfies 'akkawi cheese'"] -.-> m
     inv2["invariant: 'rice' never satisfies 'licorice'"] -.-> m
+```
+
+---
+
+## G. Social ranking
+
+The feed has its own rankers. They are hand-designed and explainable: every "For you" post says why it is
+there.
+
+```mermaid
+flowchart TB
+    subgraph signals["Signals from this user"]
+        like["likes, weight 2"]
+        save["saves, weight 3"]
+        comment["comments, weight 1.5"]
+    end
+    signals --> profile["interest profile<br/>tags, cuisines, ingredients x 0.3"]
+    profile -->|"empty: cold start"| trending
+    profile --> cands["candidates: up to 500 newest posts,<br/>not yours, not already liked"]
+    cands --> score["score = interest overlap<br/>+ 0.6 log(1 + likes)<br/>+ 2 exp(-age_hours / 240)"]
+    score --> cap["at most 3 posts per author"]
+    cap --> reason["reason: 'Because you like #italian'"]
+    subgraph trending_box["Trending"]
+        trending["engagement over 14 days,<br/>decayed by age"]
+    end
+```
+
+$$
+\mathrm{trending}(p) = \frac{1 + \mathrm{likes}_{14\mathrm{d}} + 2\,\mathrm{comments}_{14\mathrm{d}}}{(\mathrm{age}_{\mathrm{days}} + 2)^{1.3}}
+$$
+
+So the product runs three rankers with three different jobs:
+
+| Ranker | Question | Signal |
+| --- | --- | --- |
+| Cook | Can I make this? | ingredient coverage |
+| For you | Will this user like it? | their likes, saves, comments |
+| Trending | What's active right now? | recent engagement, time decay |
+
+Search (`/api/search/`) is a plain SQL substring match over titles, bodies, cuisines and tags. The weighted
+TF-IDF search from 2022 was never ported into Core.
+
+---
+
+## H. Blast radius
+
+Which code, if changed, reaches users? The answer is the opposite of where the mathematical complexity
+lives.
+
+```mermaid
+flowchart LR
+    subgraph low["Low blast radius"]
+        nmf["NMF topics"]
+        tr["TextRank"]
+        nbtfidf["notebook TF-IDF"]
+    end
+    subgraph high["High blast radius"]
+        normalize["normalize()"]
+        matches["matches()"]
+        ingjson["Post.ingredients shape"]
+    end
+    nmf -.->|"nothing users see"| none(("no product surface"))
+    tr -.-> none
+    nbtfidf -.-> none
+    normalize --> cook["What can I cook?"]
+    normalize --> auto["ingredient autocomplete"]
+    normalize --> fy["For you ingredient signal"]
+    matches --> cook
+    ingjson --> cook
+    ingjson --> ser["every recipe serializer"]
+```
+
+---
+
+## I. Hardening the matcher, adding a camera
+
+A follow-up branch, `feat/cook-synonyms-and-fridge-scan` (11 commits, pushed, not yet merged), applied
+the most concrete recommendations from a review of the research.
+
+**Matching.** `normalize()` now maps unambiguous synonyms ("garbanzo beans" to chickpea, "aubergine" to
+eggplant, "scallions" to spring onion) and irregular plurals ("bay leaves" to bay leaf, which never matched
+before). Bare "coriander" is left alone because it can mean leaves or seeds.
+
+**Notebook.** The part-of-speech bug, the NetworkX 3 incompatibility and the NaN check were fixed in the
+source; the saved outputs are still from the original run.
+
+**Fridge photo.** The 2022 "ML Model 2" came back as a vision model in front of the existing ranker, not a
+new recommender. It has been tested with the model mocked, never against the live Gemini API.
+
+```mermaid
+sequenceDiagram
+    actor U as Cook
+    participant P as Cook page
+    participant S as POST /api/cook/scan/
+    participant G as Gemini (vision)
+    participant K as GET /api/cook/
+    U->>P: up to 3 fridge photos
+    P->>S: multipart images
+    S->>S: rotate upright, resize to 1280 px, re-encode JPEG, drop EXIF and GPS
+    S->>G: photos + prompt + JSON schema
+    G-->>S: names, state, confidence, evidence
+    S->>S: normalize() each name, set staples and repeats aside, flag guesses
+    S-->>P: proposed ingredients
+    P-->>U: confident finds ticked, guesses unticked
+    U->>P: confirms
+    P->>K: ingredients the user confirmed
+```
+
+It is off unless `GEMINI_API_KEY` is set, and rate-limited to 30 scans an hour per user.
+
+---
+
+## J. The 2030 Kitchen
+
+The Kitchen is a separate prototype built from a design brief with one rule: **no language model picks
+recipes.** It serves both answers from this story, coverage and TF-IDF, from one API, behind a fridge you
+open. It lives in its own local repository and is not deployed.
+
+### Containers
+
+```mermaid
+flowchart TB
+    subgraph web["apps/web: Next.js 16, TypeScript, Tailwind, Motion"]
+        scene["Kitchen scene + 3D fridge"]
+        bar["search bar: pantry chips, intent pills, mode toggle"]
+        counter["counter: recipe cards, recipe sheet, shopping tape"]
+        crisper["crisper drawer: photo and camera"]
+    end
+    subgraph api["apps/api: FastAPI"]
+        cookep["POST /api/cook"]
+        ingep["GET /api/ingredients"]
+        recipeep["GET /api/recipes/{id}"]
+        scanep["POST /api/scan"]
+        coverage["coverage ranker<br/>ported from Core"]
+        tfidfr["TF-IDF ranker<br/>ported from the notebook"]
+    end
+    corpus[("data/recipes.json<br/>2,000 recipes")]
+    index[("data/tfidf.joblib<br/>fitted on first boot")]
+    vlm["local vision model<br/>localhost only, not yet connected"]
+    bar --> cookep
+    bar --> ingep
+    counter --> recipeep
+    crisper --> scanep
+    cookep --> coverage
+    cookep --> tfidfr
+    coverage --> corpus
+    tfidfr --> index
+    index --> corpus
+    scanep -.-> vlm
+```
+
+### From the 2022 dumps to a serving corpus
+
+```mermaid
+flowchart LR
+    dumps[("125,164 scraped recipes")] --> clean["clean: strip scrape noise,<br/>de-duplicate Epicurious methods,<br/>drop repeated titles"]
+    clean --> filter["drop drinks, seasonings,<br/>pet food, broken characters"]
+    filter --> usable["97,346 usable"]
+    usable --> tag["derive tags by rule:<br/>Levantine, vegetarian, vegan,<br/>30-min, high-protein, comfort,<br/>breakfast, dessert, cuisines"]
+    tag --> sample["reproducible sample:<br/>Levantine, vegetarian, breakfast,<br/>quick dishes first"]
+    sample --> json[("recipes.json<br/>2,000 recipes")]
+```
+
+### Two rankers, one request
+
+```mermaid
+flowchart TB
+    req["POST /api/cook<br/>ingredients, tags, mode"] --> tok["tokenize + canonical names"]
+    tok --> filt["filter by intent tags<br/>(strict: every recipe was tagged)"]
+    filt --> mode{"mode"}
+    mode -->|"coverage (default)"| cov["share of each recipe covered,<br/>staples optional,<br/>staples-only matches dropped"]
+    mode -->|"tfidf"| sim["cosine of pantry + tags<br/>to title x2, ingredients, steps, tags"]
+    cov --> cards["results with matched[] and missing[]"]
+    sim --> cards
+```
+
+### The page as a state machine
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Closed
+    Closed --> Asking: handle or Space
+    Asking --> Results: add ingredients
+    Results --> Asking: clear pantry
+    Results --> Sheet: Cook
+    Sheet --> Results: close
+    Results --> Tape: Shop missing
+    Asking --> Scanning: photo
+    Scanning --> Asking: names added
+    Scanning --> NoModel: 501
+    NoModel --> Asking: demo pantry
+```
+
+The pantry lives in the URL (`/?have=labneh,tomato&want=Levantine&mode=coverage`), so a kitchen can be
+shared. Photos never leave the machine: the scan socket only accepts a localhost model, and in v1 it
+answers `501` or a sample pantry.
+
+---
+
+## K. One engine, many inputs
+
+Across both apps the same design principle holds: new ways of asking don't get new intelligence. They
+become ingredient names, and the ranker stays the same.
+
+```mermaid
+flowchart LR
+    typed["typed text"] --> canon["canonical ingredient names<br/>normalize()"]
+    chips["pantry chips / URL"] --> canon
+    photo["fridge photo<br/>vision model"] --> canon
+    canon --> rank["rankers<br/>coverage / TF-IDF"]
+    rank --> explain["explanation<br/>matched, missing, reason"]
+    explain --> act["action<br/>cook, shop, order in"]
+    act -.->|"likes, saves, comments"| social["social rankers"]
+    social -.-> rank
 ```
