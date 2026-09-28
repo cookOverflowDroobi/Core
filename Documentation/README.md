@@ -17,6 +17,8 @@ draw at each step, and it is precise about what was built, when, and by whom.
 ## Contents
 
 - [A. The question (2022)](#a-the-question-2022)
+- [B. The research pipeline](#b-the-research-pipeline)
+- [C. What the research found](#c-what-the-research-found)
 
 ## The whole story on one line
 
@@ -84,3 +86,100 @@ flowchart TB
 ```
 
 Model 1 was researched in a separate notebook. Model 2 was never built. Neither was wired into the site.
+
+---
+
+## B. The research pipeline
+
+The research lives in [`AI_Search_RecommenderSystem_R&D/`](../AI_Search_RecommenderSystem_R%26D). Its real
+control module is the 127-cell notebook `Recipe Recommendation System.ipynb`; `Recommendation_R&D.py` is an
+incomplete extract of its cleaning stage. The corpus came from a third-party, MIT-licensed scraper
+(`recipe-box-Scraper`, from github.com/rtlee9) run against three recipe sites.
+
+```mermaid
+flowchart TB
+    subgraph acquire["1. Acquire"]
+        ar["AllRecipes<br/>39,802 records"]
+        epi["Epicurious<br/>25,323 records"]
+        fn["Food Network<br/>60,039 records"]
+    end
+    ar --> json[("3 JSON dumps<br/>~207 MB, 125,164 recipes")]
+    epi --> json
+    fn --> json
+
+    subgraph clean["2. Clean"]
+        drop["drop nulls, punctuation-only rows,<br/>instructions under 20 chars"]
+        strip["strip the scrape's 'ADVERTISEMENT' noise"]
+        doc["document = title + ingredients + instructions"]
+    end
+    json --> drop --> strip --> doc
+
+    subgraph nlp["3. Represent"]
+        spacy["spaCy: lemmas, stop words<br/>(multiprocessed, checkpointed to CSV)"]
+        tfidf["TF-IDF unigrams<br/>X is N x V, rows L2-normalised"]
+    end
+    doc --> spacy --> tfidf
+
+    subgraph topics["4. Find structure"]
+        lda["LDA, 50 topics<br/>discarded"]
+        nmf["NMF, 50 topics, nndsvdar<br/>kept"]
+        textrank["TextRank per topic:<br/>top 200 docs, window 4, PageRank<br/>25 keywords per topic"]
+        tags["keywords stamped onto the<br/>top 2,000 docs per topic"]
+    end
+    tfidf --> lda
+    tfidf --> nmf --> textrank --> tags
+
+    subgraph rank["5. Rank"]
+        search["Search_Recipes(query)<br/>weighted cosine over title, text, tags"]
+        out["printed recipe list"]
+    end
+    tfidf --> search
+    tags --> search
+    search --> out
+```
+
+The ranking math, as implemented:
+
+$$
+\mathrm{tfidf}(t,d) = \mathrm{tf}(t,d)\cdot\left(\log\frac{1+n}{1+\mathrm{df}(t)}+1\right),
+\qquad \lVert d \rVert_2 = 1
+$$
+
+$$
+s(q,d) = 0.2\,\langle q, d_{\text{title}}\rangle + 0.3\,\langle q, d_{\text{text}}\rangle + 0.5\,\langle q, d_{\text{tags}}\rangle
+$$
+
+Because rows are L2-normalised, each inner product is a cosine similarity computed as a sparse dot product.
+An optional ranked query (`qweight_array`) splits weight by halves so the first ingredient matters most:
+for three ingredients the weights are 0.5, 0.25 and 0.25.
+
+| Parameter | Value in the notebook |
+| --- | --- |
+| Topics (LDA and NMF) | `N_topics = 50` |
+| Documents per topic for keyword extraction | `N_top_docs = 200` |
+| Keywords per topic | `N_top_words = 25` |
+| Documents tagged per topic | `N_docs_categorized = 2000` |
+| TextRank co-occurrence window | `N_neighbor_window = 4` |
+| Field weights | `w_title = 0.2`, `w_text = 0.3`, `w_categories = 0.5` |
+
+---
+
+## C. What the research found
+
+The notebook is honest about its own results, and reading it closely surfaces more.
+
+| Finding | Why it matters |
+| --- | --- |
+| Its conclusion: "the original text of the recipes returns better results than the categories generated with TextRank", yet categories carry 0.5 of the final score | The formula contradicts the experiment |
+| Only the top 2,000 documents per topic get tags | Most recipes start with an empty tag field, the field weighted highest |
+| NMF was chosen over LDA by reading topics, with no coherence metric, and K = 50 was never validated | A defensible call, but exploratory, not measured |
+| LDA was fitted on TF-IDF values | LDA is a model of counts |
+| `word.pos_ == ('NOUN' or 'ADJ' or 'VERB')` | The `or` chain evaluates to `'NOUN'`, so adjectives and verbs never reached TextRank |
+| TextRank's adjacency is a dense V x V DataFrame filled cell by cell | Quadratic memory; a sparse co-occurrence matrix fits the job |
+| `i[0] == np.nan` as the missing-ingredient check | NaN never equals anything, so the check found nothing |
+| `nx.from_numpy_matrix` | Removed in NetworkX 3; the notebook no longer runs as written |
+| With only the category weight on, `['apple', 'blueberry']` returns three glazed-carrot recipes | Similarity is not intent |
+| `['japanese']` returns exactly the list an empty query returns (a crab bisque, a praline torte, artichokes) | A query that matches nothing still gets "results"; there is no no-match path |
+
+The deepest finding is the pattern behind the last two rows. A similarity engine answers **"which
+write-ups sound like this?"** That is not the question the project set out to answer.
