@@ -85,6 +85,7 @@ class Command(BaseCommand):
                 raise CommandError("Demo data already exists. Re-run with --reset to replace it.")
             demo_users.delete()
             Tag.objects.filter(tags__isnull=True).delete()
+            PostImage.objects.filter(post__isnull=True).delete()  # images of the deleted posts
             self.stdout.write("Removed previous demo data.")
 
         with transaction.atomic():
