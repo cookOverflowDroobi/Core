@@ -2,6 +2,9 @@
 
     python manage.py seed_demo_data            # create the demo data
     python manage.py seed_demo_data --reset    # delete previous demo data first
+
+Dish photos come from media/demo/photos (see fetch_demo_photos); a dish without one gets a drawn
+placeholder instead.
 """
 import random
 from datetime import timedelta
@@ -27,6 +30,7 @@ from Timeline.models import Comment, Likes, Post, PostImage, Tag
 
 FONT_DIR = Path("C:/Windows/Fonts")
 MEDIA_SUBDIR = "demo"
+PHOTO_DIR = Path(MEDIA_SUBDIR, "photos")
 
 
 def load_font(size, bold=False):
@@ -122,6 +126,10 @@ class Command(BaseCommand):
         draw.text((128, 128), initials, font=load_font(110, bold=True), fill="white", anchor="mm")
         return self.save_image(img, Path(MEDIA_SUBDIR, "avatars", f"{username}.png"))
 
+    def dish_photo(self, dish):
+        photo = PHOTO_DIR / f"{slugify(dish)}.jpg"
+        return photo if (self.media_root / photo).exists() else None
+
     def make_cover(self, username, colour):
         # No text: covers are cropped on narrow screens and the avatar overlaps a corner.
         img = gradient((1200, 320), shade(colour, 0.95), shade(colour, 0.45))
@@ -131,6 +139,9 @@ class Command(BaseCommand):
         return self.save_image(img, Path(MEDIA_SUBDIR, "covers", f"{username}.jpg"), quality=85)
 
     def make_dish_image(self, dish, cuisine, colour, author):
+        photo = self.dish_photo(dish)
+        if photo:  # a real photo from fetch_demo_photos, shared by every post of this dish
+            return photo.as_posix()
         img = gradient((900, 600), shade(colour, 1.2), shade(colour, 0.6))
         draw = ImageDraw.Draw(img)
         cx, cy, r = 450, 300, 230
