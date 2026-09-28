@@ -31,6 +31,7 @@ from Timeline.models import Comment, Likes, Post, PostImage, Tag
 FONT_DIR = Path("C:/Windows/Fonts")
 MEDIA_SUBDIR = "demo"
 PHOTO_DIR = Path(MEDIA_SUBDIR, "photos")
+COVER_SIZE = (1200, 320)
 
 
 def load_font(size, bold=False):
@@ -130,12 +131,26 @@ class Command(BaseCommand):
         photo = PHOTO_DIR / f"{slugify(dish)}.jpg"
         return photo if (self.media_root / photo).exists() else None
 
-    def make_cover(self, username, colour):
+    def make_cover(self, username, colour, dish):
         # No text: covers are cropped on narrow screens and the avatar overlaps a corner.
-        img = gradient((1200, 320), shade(colour, 0.95), shade(colour, 0.45))
-        draw = ImageDraw.Draw(img, "RGBA")
-        for x, y, r in [(1040, 40, 220), (860, 300, 140), (1180, 280, 90)]:
-            draw.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 22))
+        photo = self.dish_photo(dish)
+        if photo:
+            # A wide crop of the cook's signature dish, darker towards the bottom where the avatar sits.
+            img = Image.open(self.media_root / photo).convert("RGB")
+            scale = max(COVER_SIZE[0] / img.width, COVER_SIZE[1] / img.height)
+            img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+            left, top = (img.width - COVER_SIZE[0]) // 2, (img.height - COVER_SIZE[1]) // 2
+            img = img.crop((left, top, left + COVER_SIZE[0], top + COVER_SIZE[1])).convert("RGBA")
+            veil = Image.new("RGBA", COVER_SIZE)
+            veil_draw = ImageDraw.Draw(veil)
+            for y in range(COVER_SIZE[1]):
+                veil_draw.line([(0, y), (COVER_SIZE[0], y)], fill=(0, 0, 0, int(120 * y / (COVER_SIZE[1] - 1))))
+            img = Image.alpha_composite(img, veil).convert("RGB")
+        else:
+            img = gradient(COVER_SIZE, shade(colour, 0.95), shade(colour, 0.45))
+            draw = ImageDraw.Draw(img, "RGBA")
+            for x, y, r in [(1040, 40, 220), (860, 300, 140), (1180, 280, 90)]:
+                draw.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 22))
         return self.save_image(img, Path(MEDIA_SUBDIR, "covers", f"{username}.jpg"), quality=85)
 
     def make_dish_image(self, dish, cuisine, colour, author):
@@ -178,7 +193,7 @@ class Command(BaseCommand):
             profile.about = about
             profile.phone = f"+{self.rng.randint(10, 99)} {self.rng.randint(100, 999)} {self.rng.randint(1000, 9999)}"
             profile.profile_image = self.make_avatar(username, first[0] + last[0], colour)
-            profile.cover_image = self.make_cover(username, colour)
+            profile.cover_image = self.make_cover(username, colour, DISHES[cuisine][0][0])
             profile.save()
             user.demo = {"cuisine": cuisine, "colour": colour}
             users.append(user)
