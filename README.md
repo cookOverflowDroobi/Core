@@ -199,6 +199,9 @@ The research behind it is in [`AI_Search_RecommenderSystem_R&D/`](AI_Search_Reco
 scraped recipe datasets, spaCy tokenization and TF-IDF modelling. The project report, presentation and
 diagrams are in [`Documentation/`](Documentation).
 
+The whole story, from the 2022 notebook to the 2030 Kitchen, is told in system-design diagrams in
+[`Documentation/README.md`](Documentation/README.md).
+
 <details>
 <summary>Design diagrams</summary>
 

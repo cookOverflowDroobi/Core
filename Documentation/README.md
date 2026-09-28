@@ -27,6 +27,10 @@ draw at each step, and it is precise about what was built, when, and by whom.
 - [I. Hardening the matcher, adding a camera](#i-hardening-the-matcher-adding-a-camera)
 - [J. The 2030 Kitchen](#j-the-2030-kitchen)
 - [K. One engine, many inputs](#k-one-engine-many-inputs)
+- [L. How it is verified](#l-how-it-is-verified)
+- [M. Known limits and what comes next](#m-known-limits-and-what-comes-next)
+- [N. Lessons](#n-lessons)
+- [Credits and authorship](#credits-and-authorship)
 
 ## The whole story on one line
 
@@ -579,3 +583,78 @@ flowchart LR
     act -.->|"likes, saves, comments"| social["social rankers"]
     social -.-> rank
 ```
+
+---
+
+## L. How it is verified
+
+| | Core (feature branch) | 2030 Kitchen |
+| --- | --- | --- |
+| API tests | 42 (Django test runner) | 25 (pytest) |
+| Front-end tests | 18 (Vitest + Testing Library), typecheck | typecheck, lint |
+| Browser tests | Playwright in Edge: every page, desktop, mobile, dark mode | Playwright smoke in Edge: open the door, type "egg, tomato", see cards |
+| Key invariants tested | rice never matches licorice, normalize is idempotent, staples-only recipes dropped | the same, plus shakshuka outranks chocolate cake for egg and tomato |
+| Performance | not measured | Enter to rendered cards: median 211 ms over 5 runs, locally, production build |
+
+What is **not** verified anywhere is ranking quality. The tests prove invariants; nothing measures whether
+the top five recipes are good. There is already evidence this matters: for "labneh, tomato, pita, egg",
+the Kitchen's default coverage sort puts Spaetzle and a royal icing above the shakshukas, because small
+recipes are easy to cover. The next piece of engineering is an evaluation harness:
+
+```mermaid
+flowchart LR
+    queries["50 labelled pantry queries"] --> run["run each ranker"]
+    run --> metrics["coverage@k, exact-cookable@k,<br/>nDCG@k, synonym robustness"]
+    metrics --> compare["baseline vs change"]
+    compare --> decide["ship the change only if it wins"]
+```
+
+---
+
+## M. Known limits and what comes next
+
+- **Matching is loose in places.** Whole-word containment lets "spring onion" satisfy "onion" and "egg"
+  satisfy "egg roll wrapper". It needs a rule about which extra words change the food.
+- **The cook ranker scans every recipe.** Fine for hundreds of posts; an ingredient index is the fix at
+  scale, once matching semantics allow it.
+- **The Kitchen serves scraped recipes.** They were collected for research in 2022 and the dumps carry no
+  source links. Clear the rights, serve less (titles and ingredients only), or use recipes you own before
+  any public deploy.
+- **Vision is untested against real models.** Both designs, cloud (Core) and local (Kitchen), stop at a
+  mocked or fixture answer.
+- **Nothing is deployed.** Both apps run locally; deploy instructions are in their READMEs.
+
+---
+
+## N. Lessons
+
+```mermaid
+flowchart LR
+    s1["build a baseline<br/>(TF-IDF search)"] --> s2["read its failures<br/>(similar is not cookable)"]
+    s2 --> s3["find the invariants<br/>(rice is not licorice)"]
+    s3 --> s4["replace the abstraction<br/>(coverage)"]
+    s4 --> s5["test the system,<br/>not the model"]
+    s5 --> s6["expose it through a product"]
+    s6 --> s7["measure it<br/>(next)"]
+```
+
+1. **A model is not a system.** The most sophisticated code in the project (NMF, TextRank) reaches no user.
+   Two short functions, `normalize()` and `matches()`, decide what everyone sees.
+2. **Name the question before choosing the math.** Similarity and feasibility share a UI and almost no
+   math.
+3. **Make ranking explain itself.** "You have 5 of 7" and "Because you like #italian" are what make the
+   rankings trustworthy.
+4. **Add inputs, not intelligence.** A photo is a way of typing ingredients.
+5. **Tests prove invariants; only evaluation proves quality.**
+
+---
+
+## Credits and authorship
+
+- **2022:** cookOverflow was built by Ahmad Droobi and Ataa Shaqour as a senior graduation project, with
+  a near-even split of commits. The recipe research notebook was committed by Ahmad Droobi in May 2022.
+  The scraper is a third-party tool (MIT License, © 2018 rtlee9).
+- **2026:** the repository cleanup, the REST API, the React app, the improvements branch and the 2030
+  Kitchen were built by Ahmad Droobi with AI assistance (Claude); those commits carry co-author trailers.
+
+Project documents from 2022, including the report, presentation and UML diagrams, are in this folder.
