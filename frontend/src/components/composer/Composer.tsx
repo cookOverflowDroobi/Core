@@ -1,18 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ChefHat, ImagePlus, MessageSquareText, Plus, Trash2, Video, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChefHat, ImagePlus, MessageSquareText, Plus, Sparkles, Trash2, Video, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks";
 import { api, ApiError, errorMessage } from "@/lib/api";
-import { useCurrentUser, useSavePost } from "@/lib/queries";
-import type { Difficulty, Media, Post } from "@/lib/types";
+import { useAIStatus, useCurrentUser, useSavePost } from "@/lib/queries";
+import type { Difficulty, Media, Post, PostDraft } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChipInput } from "../ChipInput";
 import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Field, Input, Textarea, inputClass } from "../ui/Field";
+import { AIDraft, AIDrafted } from "./AIDraft";
 import type { ComposerOptions } from "./context";
 
 const DRAFT_KEY = "composer-draft";
@@ -65,11 +66,28 @@ function loadDraft(): Draft | null {
 const isBlank = (d: Draft) =>
   !d.body.trim() && !d.title.trim() && !d.ingredients.length && !d.steps.some((s) => s.trim()) && !d.tags.length;
 
+function fromAI(draft: PostDraft): Draft {
+  return {
+    mode: draft.kind,
+    body: draft.body,
+    title: draft.title,
+    cuisine: draft.cuisine,
+    difficulty: draft.difficulty,
+    cookTime: draft.cook_time ? String(draft.cook_time) : "",
+    servings: draft.servings ? String(draft.servings) : "",
+    ingredients: draft.ingredients,
+    steps: draft.steps.length ? draft.steps : [""],
+    tags: draft.tags,
+  };
+}
+
 export function Composer({ options, onClose }: { options: ComposerOptions; onClose: () => void }) {
   const me = useCurrentUser();
   const navigate = useNavigate();
   const editing = options.post;
   const save = useSavePost();
+  const ai = useAIStatus();
+  const canDraft = !editing && !!ai.data?.enabled;
 
   const [restored] = useState(() => (editing ? null : loadDraft()));
   const [draft, setDraft] = useState<Draft>(() =>
@@ -81,6 +99,9 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
   const [removed, setRemoved] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState(false);
+  const [aiOpen, setAiOpen] = useState(!!options.ai);
+  // The AI's notes on the draft it wrote, and the form as it was before, for Undo.
+  const [aiDrafted, setAiDrafted] = useState<{ notes: string[]; before: Draft } | null>(null);
   const [ingredientQuery, setIngredientQuery] = useState("");
   const debouncedQuery = useDebounce(ingredientQuery, 200);
 
@@ -123,6 +144,13 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
     addImages(event.dataTransfer.files);
     const clip = [...event.dataTransfer.files].find((f) => f.type.startsWith("video/"));
     if (clip) setVideo(clip);
+  };
+
+  const applyAIDraft = (generated: PostDraft) => {
+    setAiDrafted({ notes: generated.notes, before: draft });
+    setDraft(fromAI(generated));
+    setErrors({});
+    setAiOpen(false);
   };
 
   const validate = (): boolean => {
@@ -216,10 +244,23 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
               ))}
             </div>
           )}
+          {canDraft && (
+            <Button
+              variant={aiOpen ? "soft" : "ghost"}
+              size="sm"
+              onClick={() => setAiOpen((open) => !open)}
+              aria-expanded={aiOpen}
+              aria-label="Draft with AI"
+              className="ml-auto px-2.5 text-brand sm:px-3"
+            >
+              <Sparkles className="size-4" aria-hidden />
+              <span className="hidden sm:inline">AI</span>
+            </Button>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="ml-auto rounded-full p-1.5 text-ink-3 hover:bg-subtle hover:text-ink"
+            className={cn("rounded-full p-1.5 text-ink-3 hover:bg-subtle hover:text-ink", !canDraft && "ml-auto")}
             aria-label="Close"
           >
             <X className="size-5" />
@@ -243,6 +284,28 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
             </div>
           )}
 
+          {canDraft && aiOpen && (
+            <AIDraft
+              status={ai.data!}
+              images={images}
+              video={video}
+              mode={draft.mode}
+              current={isBlank(draft) ? null : { ...draft, steps: draft.steps.filter((s) => s.trim()) }}
+              onDraft={applyAIDraft}
+              onClose={() => setAiOpen(false)}
+            />
+          )}
+          {aiDrafted && (
+            <AIDrafted
+              notes={aiDrafted.notes}
+              onUndo={() => {
+                setDraft(aiDrafted.before);
+                setAiDrafted(null);
+              }}
+              onDismiss={() => setAiDrafted(null)}
+            />
+          )}
+
           {recipe && (
             <Field label="Recipe name" error={errors.title}>
               {(props) => (
@@ -253,7 +316,7 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
                   maxLength={120}
                   placeholder="e.g. Grandma's maqluba"
                   className="font-display text-lg"
-                  autoFocus
+                  autoFocus={!aiOpen}
                 />
               )}
             </Field>
@@ -269,7 +332,7 @@ export function Composer({ options, onClose }: { options: ComposerOptions; onClo
                 rows={recipe ? 3 : 5}
                 placeholder={recipe ? "Where is this recipe from? Any tips?" : `Share something with the kitchen, ${me.first_name || me.username}…`}
                 className="field-sizing-content"
-                autoFocus={!recipe}
+                autoFocus={!recipe && !aiOpen}
               />
             )}
           </Field>
