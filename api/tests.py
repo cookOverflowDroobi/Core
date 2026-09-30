@@ -21,7 +21,7 @@ from communications.models import Message
 from notifications.models import Notification
 from Timeline.models import Likes, Post
 
-from . import llm, scan
+from . import assistant, llm, scan
 from .ingredients import SYNONYMS, matches, normalize, rank_recipes
 
 PASSWORD = "Sup3r-secret-pw"
@@ -634,6 +634,222 @@ class LLMProviderTests(SimpleTestCase):
         self.assertEqual(body["response_format"], {"type": "json_object"})
         self.assertIn("JSON Schema", body["messages"][0]["content"])
         self.assertIsNone(urlopen.call_args[0][0].get_header("Authorization"))
+
+
+class ScriptedModel:
+    """Stands in for llm.Gemini: answers generate() from a script and records each request."""
+
+    name, model, video = "gemini", "scripted", True
+
+    def __init__(self, *replies):
+        self.replies, self.requests = list(replies), []
+
+    def user(self, text, media=()):
+        return {"role": "user", "text": text, "media": list(media)}
+
+    def assistant(self, text):
+        return {"role": "model", "text": text}
+
+    def results(self, outputs):
+        return [{"role": "tool", "outputs": [output for _, output in outputs]}]
+
+    def generate(self, system, turns, tools=(), schema=None, allow_calls=True):
+        self.requests.append({"system": system, "turns": list(turns), "tools": [t.name for t in tools],
+                              "schema": schema, "allow_calls": allow_calls})
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+
+def says(text):
+    return llm.Reply(text, [], {"role": "model", "text": text})
+
+
+def calls(name, **args):
+    return llm.Reply("", [llm.Call("c1", name, args)], {"role": "model", "call": name})
+
+
+@override_settings(AI_PROVIDER="gemini", AI_API_KEY="test-key", AI_MODEL="test-model")
+class AIAgentTests(ApiTestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()  # ai throttle counts
+
+    def test_tools_search_what_the_user_can_see(self):
+        soup = self.recipe(self.bob, "Red lentil soup", ["red lentils", "onion", "cumin"], cuisine="turkish")
+        salad = self.recipe(self.carol, "Lentil salad", ["lentils", "parsley"])
+        Post.objects.create(user=self.carol, body="Just had coffee")
+        self.assertEqual([r["id"] for r in assistant.search_posts(self.alice, "a warm lentil soup")["results"]],
+                         [soup.pk, salad.pk])  # most words matched first
+        self.assertEqual([r["link"] for r in assistant.search_posts(self.alice, author="@bob")["results"]],
+                         [f"/posts/{soup.pk}"])
+        self.assertEqual(assistant.search_posts(self.alice, "zzz")["results"], [])
+        found = assistant.recipes_with(self.alice, ["onion", "red lentils", "cumin"])
+        self.assertEqual(found["search_link"], "/cook?i=onion,red%20lentils,cumin")
+        self.assertEqual((found["results"][0]["id"], found["results"][0]["coverage"]), (soup.pk, "100%"))
+        self.assertEqual(assistant.get_post(self.alice, str(soup.pk))["ingredients"], ["red lentils", "onion", "cumin"])
+        self.assertEqual(assistant.get_post(self.alice, "abc"), {"error": "There's no post abc."})
+        self.assertEqual(assistant._execute(self.alice, llm.Call("1", "drop_tables", {})),
+                         {"error": "There's no tool called drop_tables."})
+        with patch("api.assistant.trending", side_effect=RuntimeError("boom")), \
+                self.assertLogs("api.assistant", "ERROR"):
+            self.assertEqual(assistant._execute(self.alice, llm.Call("1", "trending_posts", {})),
+                             {"error": "That tool failed."})
+
+    def test_the_agent_stops_calling_tools_after_max_steps(self):
+        model = ScriptedModel(*[calls("trending_posts")] * (assistant.MAX_STEPS - 1), says("Here's what's hot."))
+        self.assertEqual(assistant.draft_reply(model, self.alice, self.bob), "Here's what's hot.")
+        self.assertEqual(len(model.requests), assistant.MAX_STEPS)
+        self.assertEqual([r["allow_calls"] for r in model.requests][-2:], [True, False])
+        self.assertIn("(No messages yet.", model.requests[0]["turns"][0]["text"])
+
+    def test_status_and_sous_chefs_account(self):
+        client = self.as_user(self.alice)
+        self.assertEqual(client.post("/api/auth/register/", {  # the name is kept for Sous-chef
+            "username": "Sous_Chef", "email": "sc@example.com", "password": PASSWORD}).status_code, 400)
+        data = client.get("/api/ai/").json()
+        self.assertEqual({key: data[key] for key in ("enabled", "provider", "model", "video")},
+                         {"enabled": True, "provider": "gemini", "model": "test-model", "video": True})
+        self.assertEqual((data["assistant"]["username"], data["assistant"]["is_bot"]), ("sous_chef", True))
+        chef = User.objects.get(username="sous_chef")
+        self.assertFalse(chef.has_usable_password())
+        self.assertEqual(client.get("/api/ai/").json()["assistant"]["id"], chef.pk)  # created once
+        self.assertEqual(client.get("/api/stats/").json()["cooks"], 3)
+        self.assertNotIn(chef.pk, [u["id"] for u in client.get("/api/users/suggestions/?limit=20").json()])
+        self.assertNotIn("dev_reset_url", client.post("/api/auth/password-reset/", {"email": chef.email}).json())
+        with override_settings(AI_API_KEY=""):
+            self.assertEqual(client.get("/api/ai/").json()["enabled"], False)
+            response = client.post("/api/ai/post-draft/", {"prompt": "soup"})
+            self.assertEqual((response.status_code, response.json()["code"]), (503, "ai_disabled"))
+        chef.delete()
+        make_user("sous_chef")  # a person who has the name keeps it, and Sous-chef stays off
+        with self.assertLogs("api.assistant", "ERROR"):
+            self.assertIsNone(assistant.bot())
+
+    def test_sous_chef_answers_from_the_sites_recipes(self):
+        soup = self.recipe(self.bob, "Lentil soup", ["lentils", "onion", "cumin"])
+        assistant.bot()
+        client = self.as_user(self.alice)
+        client.post("/api/conversations/sous_chef/", {"body": "Hi!"}, format="json")
+        client.post("/api/conversations/sous_chef/", {"body": "Any lentil ideas?"}, format="json")
+        model = ScriptedModel(calls("search_posts", query="lentil"),
+                              says(f"Try Bob's **lentil soup**: /posts/{soup.pk}"))
+        with patch("api.llm.client", return_value=model):
+            response = client.post("/api/conversations/sous_chef/reply/")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["message"]["body"], f"Try Bob's lentil soup: /posts/{soup.pk}")
+        self.assertFalse(response.json()["message"]["is_mine"])
+        first = model.requests[0]
+        self.assertIn("chatting with Alice (@alice)", first["system"])
+        self.assertEqual(first["turns"], [{"role": "user", "text": "Hi!\n\nAny lentil ideas?", "media": []}])
+        self.assertEqual(model.requests[1]["turns"][-1]["outputs"][0]["results"][0]["id"], soup.pk)
+        thread = client.get("/api/conversations/sous_chef/").json()["messages"]
+        self.assertEqual([m["is_mine"] for m in thread], [True, True, False])
+        with patch("api.llm.client", return_value=ScriptedModel()):  # already answered: no model call
+            self.assertEqual(client.post("/api/conversations/sous_chef/reply/").json(), {"message": None})
+
+    def test_sous_chef_failures_save_nothing(self):
+        chef = assistant.bot()
+        client = self.as_user(self.alice)
+        client.post("/api/conversations/sous_chef/", {"body": "Help"}, format="json")
+        with patch("api.llm.client", return_value=ScriptedModel(llm.LLMError("HTTP 429"))), \
+                self.assertLogs("api.views.ai", "WARNING") as logs:
+            response = client.post("/api/conversations/sous_chef/reply/")
+        self.assertEqual((response.status_code, response.json()["code"]), (502, "ai_failed"))
+        self.assertIn("HTTP 429", logs.output[0])
+        self.assertFalse(Message.objects.filter(sender=chef).exists())
+        with patch("api.llm.client", return_value=ScriptedModel()):
+            self.assertEqual(client.post("/api/conversations/bob/reply/").status_code, 404)
+            cache.add(f"sous-chef-answering:{self.alice.pk}", True)  # an answer is already on its way
+            self.assertEqual(client.post("/api/conversations/sous_chef/reply/").json()["code"], "ai_busy")
+
+    def test_reply_drafts_are_written_as_you_and_never_sent(self):
+        hummus = self.recipe(self.alice, "Hummus", ["chickpea", "tahini", "lemon"])
+        Message.send_message(self.bob, self.alice, "Can you share your hummus recipe?")
+        model = ScriptedModel(calls("search_posts", query="hummus", author="alice"),
+                              says(f'"Sure, it\'s easy: /posts/{hummus.pk}"'))
+        client = self.as_user(self.alice)
+        with patch("api.llm.client", return_value=model):
+            response = client.post("/api/conversations/bob/draft/", {"hint": "sure, easy"}, format="json")
+        self.assertEqual(response.json(), {"draft": f"Sure, it's easy: /posts/{hummus.pk}"})
+        request = model.requests[0]
+        self.assertIn("message that Alice (@alice) will send to Bob (@bob)", request["system"])
+        self.assertIn("@bob: Can you share your hummus recipe?", request["turns"][0]["text"])
+        self.assertIn("in my own rough words: sure, easy", request["turns"][0]["text"])
+        self.assertEqual(model.requests[1]["turns"][-1]["outputs"][0]["results"][0]["id"], hummus.pk)
+        self.assertEqual(Message.objects.count(), 2)  # only Bob's message, one copy each
+        assistant.bot()
+        self.assertEqual(client.post("/api/conversations/sous_chef/draft/").status_code, 400)
+        self.assertEqual(client.post("/api/conversations/alice/draft/").status_code, 400)
+
+    def test_post_drafts_from_notes_photos_and_video(self):
+        answer = {"kind": "recipe", "title": "Shakshuka", "body": "Sunday eggs.", "cuisine": "Palestinian",
+                  "difficulty": "easy", "cook_time": 25.0, "servings": "2", "ingredients": ["egg", "tomato", "egg", ""],
+                  "steps": ["Simmer the tomatoes for 10 minutes.", "Crack in 4 eggs."],
+                  "tags": ["#Brunch", "one pot", "brunch"], "notes": ["I guessed the amounts."]}
+        model = ScriptedModel(says(json.dumps(answer)))
+        clip = SimpleUploadedFile("pan.mov", b"\x00\x00\x00\x14ftypqt  ", content_type="video/quicktime")
+        with patch("api.llm.client", return_value=model):
+            response = self.as_user(self.alice).post("/api/ai/post-draft/", {
+                "prompt": "my shakshuka", "images": [phone_photo()], "video": clip, "mode": "post",
+                "current": json.dumps({"body": "Sunday eggs", "title": ""})}, format="multipart")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["draft"], {
+            "kind": "recipe", "title": "Shakshuka", "body": "Sunday eggs.", "cuisine": "palestinian",
+            "difficulty": "easy", "cook_time": 25, "servings": 2, "ingredients": ["egg", "tomato"],
+            "steps": ["Simmer the tomatoes for 10 minutes.", "Crack in 4 eggs."], "tags": ["brunch", "onepot"],
+            "notes": ["I guessed the amounts."]})
+        request = model.requests[0]
+        turn = request["turns"][0]
+        self.assertEqual([m.mime for m in turn["media"]], ["image/jpeg", "video/mov"])
+        self.assertTrue(turn["media"][0].data.startswith(b"\xff\xd8"))  # re-encoded without its GPS position
+        self.assertIn("The cook's notes: my shakshuka", turn["text"])
+        self.assertIn('Their draft so far, to keep and complete: {"body": "Sunday eggs"}', turn["text"])
+        self.assertIn("Attached: 1 photo of the dish, their video, with its sound.", turn["text"])
+        self.assertEqual(request["schema"], assistant.POST_SCHEMA)
+
+    def test_post_drafts_check_uploads_and_answers(self):
+        client = self.as_user(self.alice)
+        url = "/api/ai/post-draft/"
+        with patch("api.llm.client", return_value=ScriptedModel()):
+            self.assertEqual(client.post(url, {}, format="multipart").json(),
+                             {"prompt": ["Describe your dish, or add a photo or a video."]})
+            self.assertEqual(client.post(url, {"images": [png(f"{i}.png") for i in range(5)]},
+                                         format="multipart").status_code, 400)
+            gif = SimpleUploadedFile("a.gif", b"GIF89a", content_type="image/gif")
+            self.assertEqual(client.post(url, {"frames": [gif]}, format="multipart").json(),
+                             {"frames": ["a.gif isn't a JPEG, PNG or WebP photo."]})
+            avi = SimpleUploadedFile("a.avi", b"RIFF", content_type="video/x-msvideo")
+            self.assertEqual(client.post(url, {"video": avi}, format="multipart").json(),
+                             {"video": ["a.avi isn't an MP4, WebM or MOV video."]})
+            with override_settings(AI_MAX_VIDEO_MB=0):
+                clip = SimpleUploadedFile("a.mp4", b"1234", content_type="video/mp4")
+                self.assertEqual(client.post(url, {"video": clip}, format="multipart").json(),
+                                 {"video": ["a.mp4 is larger than 0 MB."]})
+        blind = ScriptedModel()
+        blind.video = False
+        with patch("api.llm.client", return_value=blind):
+            clip = SimpleUploadedFile("a.mp4", b"1234", content_type="video/mp4")
+            self.assertEqual(client.post(url, {"video": clip}, format="multipart").json(),
+                             {"video": ["This AI model can't watch videos. Send frames from it instead."]})
+        with patch("api.llm.client", return_value=ScriptedModel(says("Sorry, I can't help with that."))), \
+                self.assertLogs("api.views.ai", "WARNING"):
+            response = client.post(url, {"prompt": "soup"}, format="multipart")
+        self.assertEqual((response.status_code, response.json()["code"]), (502, "ai_failed"))
+
+    def test_post_drafts_fit_the_form_whatever_the_model_sends(self):
+        clean = assistant.clean_post_draft
+        self.assertEqual(clean({"kind": "recipe", "body": "Look!", "ingredients": ["egg"], "steps": []})["kind"],
+                         "post")  # a recipe needs steps
+        odd = clean({"kind": "recipe", "title": "T" * 200, "body": "x", "cook_time": "soon", "servings": -2,
+                     "difficulty": "unknown", "ingredients": ["egg", 7, None, {"a": 1}], "steps": ["Boil."],
+                     "tags": "not a list", "notes": ["check"] * 9})
+        self.assertEqual((len(odd["title"]), odd["cook_time"], odd["servings"], odd["difficulty"]),
+                         (120, None, None, ""))
+        self.assertEqual((odd["ingredients"], odd["tags"], odd["notes"]), (["egg", "7"], [], ["check"]))
+        with self.assertRaises(llm.LLMError):
+            clean({"kind": "post", "body": "  "})
 
 
 class SiteRoutingTests(ApiTestCase):
