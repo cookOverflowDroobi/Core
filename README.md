@@ -41,6 +41,14 @@ and cook along step by step.
   Different names for the same thing match ("garbanzo beans" finds chickpea recipes).
 - **Scan your fridge.** Snap up to three photos and a vision model lists the ingredients it can see.
   You tick what's really there before it joins the search; guesses start unticked. Needs a Gemini API key.
+- **Sous-chef, an AI cooking assistant.** Message it like any cook: "what can I make with chicken and rice?",
+  "what's trending?", "how do I fix a split sauce?". It's an agent: before it answers, it searches the recipes
+  cooks shared here and links them (`/posts/12`, or a ready-made *What can I cook?* search).
+- **AI drafts, never AI posts.** *Draft with AI* in the composer turns your notes, photos and a video into a post
+  or a full recipe (ingredients, steps with timings, tags) for you to check, with notes on what it guessed and an
+  undo. In a chat, ✨ drafts your reply, or polishes your own rough words, looking up your recipes when someone asks.
+  Nothing is posted or sent until you press the button. Works with a free Gemini key, GitHub Models, Groq, or Ollama
+  on your own machine; see [AI](#ai).
 - **Cook mode.** A full-screen, step-by-step view with large type. Durations in the steps ("simmer for
   40 minutes") become one-tap timers that keep running between steps and chime when done, and the
   screen stays awake while you cook.
@@ -137,9 +145,32 @@ defaults. Nothing is required for local development.
 | `EMAIL_VERIFICATION_REQUIRED` | on only with SMTP | Require new accounts to confirm their email |
 | `GEMINI_API_KEY` | empty | Turns on *Scan your fridge*. Each scan is one paid Gemini API call (30 per user per hour) |
 | `COOK_SCAN_MODEL` | `gemini-3.1-flash-lite` | Gemini model that reads the photos |
+| `AI_PROVIDER` | `gemini` | `gemini`, or `openai` for any OpenAI-compatible endpoint (see [AI](#ai)) |
+| `AI_MODEL` | `gemini-3.8-flash` | Model for Sous-chef and the drafts |
+| `AI_API_KEY` | `GEMINI_API_KEY` | Key for the AI provider (optional for a local Ollama) |
+| `AI_BASE_URL` | empty | The OpenAI-compatible endpoint, such as `https://models.github.ai/inference` |
+| `AI_MAX_VIDEO_MB` | `20` | Largest video sent to Gemini as it is; longer clips are sent as stills |
 
 In local development, emails (such as password-reset links) are printed in the Django console, and
 the reset page links to them directly.
+
+### AI
+
+Sous-chef and the AI drafts are off until a model is configured, and each reply or draft is one to five model
+calls (60 per user per hour). There are free ways to run them:
+
+| Option | Settings | Notes |
+| --- | --- | --- |
+| **Gemini** (default) | `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey) | Free tier, no card. Watches videos with their sound. The same key turns on the fridge scan |
+| **GitHub Models** | `AI_PROVIDER=openai`, `AI_BASE_URL=https://models.github.ai/inference`, `AI_MODEL=openai/gpt-4.1-mini`, `AI_API_KEY=` a GitHub token with `models:read` | Free for GitHub accounts, low daily limits |
+| **Groq** | `AI_PROVIDER=openai`, `AI_BASE_URL=https://api.groq.com/openai/v1`, a vision model, `AI_API_KEY` | Free tier, very fast |
+| **Ollama** | `AI_PROVIDER=openai`, `AI_BASE_URL=http://localhost:11434/v1`, `AI_MODEL=qwen2.5vl` | Runs on your machine: no key, no data leaves it |
+
+In PowerShell, set them before `runserver`, for example `$env:GEMINI_API_KEY = "..."`. Models behind the
+`openai` setting can't watch video, so the browser picks stills from it and sends those.
+
+The agents only read. Their tools search the posts the signed-in user could open anyway, and anything under your
+name comes back as a draft. Sous-chef's own answers come from its own bot account (`sous_chef`), which can't sign in.
 
 ## Testing
 
@@ -158,7 +189,7 @@ delete a post, and use cook mode. They fail on any console error or failed reque
 
 ```text
 .
-├── api/                  REST API: views, serializers, recommendations, ingredient matching, tests
+├── api/                  REST API: views, serializers, recommendations, ingredient matching, AI agents, tests
 ├── frontend/             React app
 │   ├── src/pages/        One file per screen
 │   ├── src/components/   Layout, posts, composer, UI kit
@@ -187,6 +218,10 @@ Browse and try every endpoint at `/api/docs/`. The main ones:
 | `POST`/`DELETE /api/posts/{id}/like/`, `save/` | Reactions |
 | `GET /api/cook/?ingredients=rice,chicken` | Recipes ranked by the ingredients you have |
 | `POST /api/cook/scan/` | Fridge photos (multipart `images`, up to 3) to a list of ingredients to confirm |
+| `GET /api/ai/` | Whether AI is on, what the model can read, and Sous-chef's account |
+| `POST /api/ai/post-draft/` | `prompt`, `images`, a `video` or its `frames` to a post or recipe draft |
+| `POST /api/conversations/{username}/draft/` | A draft of your next message, optionally from your `hint` |
+| `POST /api/conversations/sous_chef/reply/` | Sous-chef answers your latest messages |
 | `GET /api/search/?q=` | People, posts and tags |
 | `GET /api/notifications/`, `/api/conversations/` | Inbox |
 
