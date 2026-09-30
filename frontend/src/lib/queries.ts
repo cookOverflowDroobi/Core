@@ -9,14 +9,17 @@ import {
 import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import type {
+  AIStatus,
   Badges,
   Comment,
   CookResponse,
   ScanResponse,
   Conversation,
   Notification,
+  Message,
   Paginated,
   Post,
+  PostDraft,
   Profile,
   ReactionState,
   SearchResults,
@@ -43,6 +46,7 @@ export const keys = {
   thread: (username: string) => ["thread", username.toLowerCase()] as const,
   search: (q: string) => ["search", q] as const,
   stats: ["stats"] as const,
+  ai: ["ai"] as const,
 };
 
 // ------------------------------------------------------------------ session
@@ -351,5 +355,49 @@ export function useThread(username: string) {
     queryFn: () => api<Thread>(`/conversations/${encodeURIComponent(username)}/`),
     enabled: !!username,
     refetchInterval: 4_000,
+  });
+}
+
+// ----------------------------------------------------------------------- AI
+
+/** Whether this server has AI set up, and what its model can read. */
+export function useAIStatus() {
+  return useQuery({ queryKey: keys.ai, queryFn: () => api<AIStatus>("/ai/"), staleTime: 10 * 60_000 });
+}
+
+/** A post or recipe drafted from a prompt, photos and a video (or frames from one). Nothing is posted. */
+export function useDraftPost() {
+  return useMutation({
+    mutationFn: (form: FormData) => api<{ draft: PostDraft }>("/ai/post-draft/", { method: "POST", form }),
+  });
+}
+
+/** A draft of your next message in a chat, optionally from your own rough `hint`. Nothing is sent. */
+export function useDraftReply(username: string) {
+  return useMutation({
+    mutationFn: (hint: string) =>
+      api<{ draft: string }>(`/conversations/${encodeURIComponent(username)}/draft/`, { method: "POST", body: { hint } }),
+  });
+}
+
+/** Ask Sous-chef to answer your latest messages; its answer joins the thread. */
+export function useSousChefReply(username: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api<{ message: Message | null }>(`/conversations/${encodeURIComponent(username)}/reply/`, { method: "POST" }),
+    onSuccess: ({ message }) => {
+      if (message) {
+        qc.setQueryData<Thread>(keys.thread(username), (t) =>
+          t && !t.messages.some((m) => m.id === message.id) ? { ...t, messages: [...t.messages, message] } : t,
+        );
+      }
+      // Reading the thread marks the answer read while the chat is open (a closed chat isn't refetched, so the
+      // answer stays unread there); then refresh the unread counts.
+      qc.invalidateQueries({ queryKey: keys.thread(username) }).then(() => {
+        qc.invalidateQueries({ queryKey: keys.conversations });
+        qc.invalidateQueries({ queryKey: keys.badges });
+      });
+    },
   });
 }

@@ -3,6 +3,8 @@ export interface UserMini {
   username: string;
   full_name: string;
   avatar: string | null;
+  /** An account the server runs, like the Sous-chef assistant. */
+  is_bot: boolean;
 }
 
 export interface UserCard extends UserMini {
@@ -136,6 +138,36 @@ export interface ScanResponse {
   proposed: ScanItem[];
   rejected: { raw: string; reason: string }[];
   warnings: string[];
+}
+
+/** What this server's AI can do (`GET /api/ai/`). */
+export interface AIStatus {
+  enabled: boolean;
+  provider: "gemini" | "openai" | null;
+  model: string | null;
+  /** Whether the model watches videos itself; if not, the app sends frames picked from them. */
+  video: boolean;
+  max_images: number;
+  max_frames: number;
+  max_video_mb: number;
+  /** Sous-chef's account, to chat with. */
+  assistant: UserMini | null;
+}
+
+/** A post or recipe the AI drafted for the composer. Nothing is published until the user posts it. */
+export interface PostDraft {
+  kind: "post" | "recipe";
+  title: string;
+  body: string;
+  cuisine: string;
+  difficulty: Difficulty;
+  cook_time: number | null;
+  servings: number | null;
+  ingredients: string[];
+  steps: string[];
+  tags: string[];
+  /** What the AI guessed, for the cook to check. */
+  notes: string[];
 }
 
 export interface TagCount {
