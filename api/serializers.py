@@ -1,6 +1,7 @@
 import json
 import re
 
+from django.conf import settings
 from django.contrib.auth import password_validation
 from django.core.validators import validate_email
 from rest_framework import serializers
@@ -177,7 +178,8 @@ class RegisterSerializer(serializers.Serializer):
     def validate_username(self, value):
         if not USERNAME_RE.match(value):
             raise serializers.ValidationError("Use 3-30 letters, numbers, dots or underscores.")
-        if User.objects.filter(username__iexact=value).exists():
+        reserved = value.lower() == settings.AI_ASSISTANT_USERNAME.lower()  # Sous-chef's account
+        if reserved or User.objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError("That username is taken.")
         return value
 
