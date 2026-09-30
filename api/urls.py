@@ -3,7 +3,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
-from .views import auth, discover, inbox, posts, users
+from .views import ai, auth, discover, inbox, posts, users
 
 app_name = "api"
 
@@ -47,6 +47,11 @@ urlpatterns = [
     path("notifications/<int:pk>/", inbox.NotificationDetailView.as_view(), name="notification-detail"),
     path("conversations/", inbox.ConversationsView.as_view(), name="conversations"),
     path("conversations/<str:username>/", inbox.ConversationView.as_view(), name="conversation"),
+    path("conversations/<str:username>/draft/", ai.ReplyDraftView.as_view(), name="conversation-draft"),
+    path("conversations/<str:username>/reply/", ai.SousChefReplyView.as_view(), name="conversation-reply"),
+
+    path("ai/", ai.AIStatusView.as_view(), name="ai"),
+    path("ai/post-draft/", ai.PostDraftView.as_view(), name="ai-post-draft"),
 
     path("", include(router.urls)),
 ]
