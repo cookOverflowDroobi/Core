@@ -230,7 +230,9 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
         'rest_framework.throttling.ScopedRateThrottle',
     ],
-    'DEFAULT_THROTTLE_RATES': {'anon': '300/hour', 'user': '10000/hour', 'auth': '30/minute', 'scan': '30/hour'},
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '300/hour', 'user': '10000/hour', 'auth': '30/minute', 'scan': '30/hour', 'ai': '60/hour',
+    },
 }
 
 # Fridge scan (POST /api/cook/scan/): a Gemini vision model reads fridge photos into an ingredient
@@ -238,6 +240,18 @@ REST_FRAMEWORK = {
 COOK_SCAN_API_KEY = os.getenv('GEMINI_API_KEY', '')
 COOK_SCAN_MODEL = os.getenv('COOK_SCAN_MODEL', 'gemini-3.1-flash-lite')
 COOK_SCAN_TIMEOUT = int(os.getenv('COOK_SCAN_TIMEOUT', '30'))
+
+# AI features (see api/llm.py): the Sous-chef chat, reply drafts and post drafts from a prompt, photos or a video.
+# Gemini by default, with the same GEMINI_API_KEY (a free key from Google AI Studio works). Or set AI_PROVIDER=openai
+# for any OpenAI-compatible endpoint: GitHub Models, Groq, OpenRouter, or Ollama on your machine with no key at all.
+# Off until a provider is configured; each reply or draft is one to a few model calls (60 per user per hour).
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').strip().lower()
+AI_API_KEY = os.getenv('AI_API_KEY', '') or (COOK_SCAN_API_KEY if AI_PROVIDER == 'gemini' else '')
+AI_BASE_URL = os.getenv('AI_BASE_URL', '')  # openai only, e.g. https://models.github.ai/inference
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.8-flash' if AI_PROVIDER == 'gemini' else '')
+AI_TIMEOUT = int(os.getenv('AI_TIMEOUT', '60'))
+AI_MAX_VIDEO_MB = int(os.getenv('AI_MAX_VIDEO_MB', '20'))  # longer clips are sent as frames the browser picks
+AI_ASSISTANT_USERNAME = os.getenv('AI_ASSISTANT_USERNAME', 'sous_chef')
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'cookOverflow API',
