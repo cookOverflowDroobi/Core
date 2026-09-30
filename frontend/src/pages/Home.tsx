@@ -1,10 +1,10 @@
-import { ChefHat, ImagePlus, Users } from "lucide-react";
+import { ChefHat, ImagePlus, Sparkles, Users } from "lucide-react";
 import { useComposer } from "@/components/composer/context";
 import { PostFeed } from "@/components/post/PostFeed";
 import { Avatar } from "@/components/ui/Avatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { useDocumentTitle } from "@/hooks";
-import { useCurrentUser, usePosts } from "@/lib/queries";
+import { useAIStatus, useCurrentUser, usePosts } from "@/lib/queries";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -19,6 +19,7 @@ export default function Home() {
   const me = useCurrentUser();
   const composer = useComposer();
   const feed = usePosts("feed");
+  const ai = useAIStatus();
 
   return (
     <div className="space-y-5">
@@ -53,6 +54,15 @@ export default function Home() {
           >
             <ImagePlus className="size-5 text-herb" aria-hidden /> Photo
           </button>
+          {ai.data?.enabled && (
+            <button
+              type="button"
+              onClick={() => composer.open({ ai: true })}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold text-ink-2 hover:bg-subtle"
+            >
+              <Sparkles className="size-5 text-brand" aria-hidden /> Draft with AI
+            </button>
+          )}
         </div>
       </section>
 
