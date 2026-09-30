@@ -21,7 +21,7 @@ from communications.models import Message
 from notifications.models import Notification
 from Timeline.models import Likes, Post
 
-from . import scan
+from . import llm, scan
 from .ingredients import SYNONYMS, matches, normalize, rank_recipes
 
 PASSWORD = "Sup3r-secret-pw"
@@ -529,6 +529,111 @@ class FridgeScanApiTests(ApiTestCase):
             response = client.post("/api/cook/scan/", {"images": [png()]}, format="multipart")
             self.assertEqual((response.status_code, response.json()["code"]), (503, "scan_disabled"))
         self.assertEqual(client.get("/api/cook/scan/").json()["enabled"], True)
+
+
+# ---------------------------------------------------------------- AI
+
+def openai_response(message):
+    return io.BytesIO(json.dumps({"choices": [{"message": {"role": "assistant", **message}}]}).encode())
+
+
+GET_POST = llm.Tool("get_post", "One post.", {"type": "object", "properties": {"post_id": {"type": "integer"}},
+                                              "required": ["post_id"]})
+
+
+@override_settings(AI_PROVIDER="gemini", AI_API_KEY="test-key", AI_MODEL="test-model")
+class LLMProviderTests(SimpleTestCase):
+    def test_client_follows_the_settings(self):
+        self.assertIsInstance(llm.client(), llm.Gemini)
+        with override_settings(AI_API_KEY=""):
+            self.assertIsNone(llm.client())
+        with override_settings(AI_PROVIDER="openai", AI_BASE_URL="http://localhost:11434/v1", AI_API_KEY="",
+                               AI_MODEL="llama"):
+            self.assertIsInstance(llm.client(), llm.OpenAICompatible)  # a local Ollama needs no key
+        with override_settings(AI_PROVIDER="openai", AI_BASE_URL=""):
+            self.assertIsNone(llm.client())
+
+    def test_gemini_tool_calls_send_the_models_turn_back_untouched(self):
+        model = llm.client()
+        asked = {"role": "model", "parts": [
+            {"functionCall": {"id": "c1", "name": "get_post", "args": {"post_id": 3}}, "thoughtSignature": "sig"}]}
+        answered = {"role": "model", "parts": [{"text": "Thinking", "thought": True}, {"text": "Try /posts/3"}]}
+        replies = [gemini_response({"candidates": [{"content": asked}]}),
+                   gemini_response({"candidates": [{"content": answered}]})]
+        with patch("api.llm.urllib.request.urlopen", side_effect=replies) as urlopen:
+            turns = [model.user("Soup?", [llm.Media("image/jpeg", b"jpeg")])]
+            reply = model.generate("Be brief.", turns, tools=[GET_POST])
+            self.assertEqual(reply.calls, [llm.Call("c1", "get_post", {"post_id": 3})])
+            turns += [reply.turn, *model.results([(reply.calls[0], {"title": "Soup"})])]
+            self.assertEqual(model.generate("Be brief.", turns, tools=[GET_POST], allow_calls=False).text,
+                             "Try /posts/3")
+        request = urlopen.call_args_list[0][0][0]
+        self.assertTrue(request.full_url.endswith("/models/test-model:generateContent"))
+        self.assertEqual(request.get_header("X-goog-api-key"), "test-key")
+        first, second = (json.loads(call[0][0].data) for call in urlopen.call_args_list)
+        self.assertEqual(first["systemInstruction"], {"parts": [{"text": "Be brief."}]})
+        self.assertEqual(first["contents"][0]["parts"],
+                         [{"inlineData": {"mimeType": "image/jpeg", "data": "anBlZw=="}}, {"text": "Soup?"}])
+        declared = first["tools"][0]["functionDeclarations"][0]["parameters"]
+        self.assertEqual((declared["type"], declared["properties"]["post_id"]["type"]), ("OBJECT", "INTEGER"))
+        self.assertNotIn("toolConfig", first)
+        self.assertEqual(second["contents"][1], asked)  # with its thought signature
+        self.assertEqual(second["contents"][2], {"role": "user", "parts": [
+            {"functionResponse": {"name": "get_post", "response": {"title": "Soup"}, "id": "c1"}}]})
+        self.assertEqual(second["toolConfig"], {"functionCallingConfig": {"mode": "NONE"}})
+
+    def test_gemini_json_answers_and_failures(self):
+        model = llm.client()
+        answer = {"candidates": [{"content": {"role": "model", "parts": [{"text": '{"minutes": 20}'}]}}]}
+        schema = {"type": "object", "properties": {"minutes": {"type": "integer"}}}
+        with patch("api.llm.urllib.request.urlopen", return_value=gemini_response(answer)) as urlopen:
+            self.assertEqual(llm.loads_json(model.generate("s", [], schema=schema).text), {"minutes": 20})
+        config = json.loads(urlopen.call_args[0][0].data)["generationConfig"]
+        self.assertEqual(config["responseSchema"]["properties"]["minutes"]["type"], "INTEGER")
+        blocked = {"promptFeedback": {"blockReason": "SAFETY"}}
+        with patch("api.llm.urllib.request.urlopen", return_value=gemini_response(blocked)):
+            with self.assertRaisesMessage(llm.LLMError, "SAFETY"):
+                model.generate("s", [])
+        with patch("api.llm.urllib.request.urlopen", side_effect=urllib.error.URLError("offline")):
+            with self.assertRaises(llm.LLMError):
+                model.generate("s", [])
+        with self.assertRaises(llm.LLMError):
+            llm.loads_json("Sorry, I can't help with that.")
+
+    @override_settings(AI_PROVIDER="openai", AI_BASE_URL="https://models.example/v1/", AI_API_KEY="gh-token",
+                       AI_MODEL="vision-model")
+    def test_openai_compatible_tools_photos_and_json(self):
+        model = llm.client()
+        asked = {"content": None, "tool_calls": [
+            {"id": "t1", "type": "function", "function": {"name": "get_post", "arguments": '{"post_id": 3}'}}]}
+        answered = {"content": "<think>They want soup.</think>Try /posts/3"}
+        with patch("api.llm.urllib.request.urlopen",
+                   side_effect=[openai_response(asked), openai_response(answered)]) as urlopen:
+            turns = [model.user("Soup?", [llm.Media("image/png", b"png")])]
+            reply = model.generate("Be brief.", turns, tools=[GET_POST])
+            self.assertEqual(reply.calls, [llm.Call("t1", "get_post", {"post_id": 3})])
+            turns += [reply.turn, *model.results([(reply.calls[0], {"title": "Soup"})])]
+            self.assertEqual(model.generate("Be brief.", turns, tools=[GET_POST]).text, "Try /posts/3")
+        request = urlopen.call_args_list[0][0][0]
+        self.assertEqual(request.full_url, "https://models.example/v1/chat/completions")
+        self.assertEqual(request.get_header("Authorization"), "Bearer gh-token")
+        first, second = (json.loads(call[0][0].data) for call in urlopen.call_args_list)
+        self.assertEqual((first["model"], first["messages"][0]),
+                         ("vision-model", {"role": "system", "content": "Be brief."}))
+        self.assertEqual(first["messages"][1]["content"][1],
+                         {"type": "image_url", "image_url": {"url": "data:image/png;base64,cG5n"}})
+        self.assertEqual(first["tools"][0]["function"]["parameters"], GET_POST.parameters)
+        self.assertEqual(second["messages"][3], {"role": "tool", "tool_call_id": "t1", "content": '{"title": "Soup"}'})
+
+        fenced = {"content": 'Here you go:\n```json\n{"minutes": 20}\n```'}
+        with override_settings(AI_API_KEY=""), \
+                patch("api.llm.urllib.request.urlopen", return_value=openai_response(fenced)) as urlopen:
+            reply = llm.client().generate("s", [], schema={"type": "object"})
+        self.assertEqual(llm.loads_json(reply.text), {"minutes": 20})
+        body = json.loads(urlopen.call_args[0][0].data)
+        self.assertEqual(body["response_format"], {"type": "json_object"})
+        self.assertIn("JSON Schema", body["messages"][0]["content"])
+        self.assertIsNone(urlopen.call_args[0][0].get_header("Authorization"))
 
 
 class SiteRoutingTests(ApiTestCase):
