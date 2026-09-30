@@ -100,7 +100,7 @@ def suggested_users(user, limit=5):
         Profile_profile_followers.objects.filter(user_id__in=following)
         .exclude(profile_id__in=following | {user.pk}).values_list("profile_id", flat=True)
     )
-    candidates = list(users_for(user).exclude(pk__in=following | {user.pk}).filter(is_active=True))
+    candidates = list(users_for(user).exclude(pk__in=following | {user.pk}).filter(is_active=True, is_bot=False))
     names = dict(User.objects.filter(pk__in=following).values_list("pk", "username"))
 
     def score(candidate):

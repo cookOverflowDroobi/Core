@@ -153,7 +153,7 @@ class StatsView(APIView):
     def get(self, request):
         recipes = Post.objects.exclude(ingredients=[])
         return Response({
-            "cooks": User.objects.filter(is_active=True).count(),
+            "cooks": User.objects.filter(is_active=True, is_bot=False).count(),
             "recipes": recipes.count(),
             "posts": Post.objects.count(),
             "cuisines": recipes.exclude(cuisine="").values("cuisine").distinct().count(),

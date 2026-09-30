@@ -138,7 +138,7 @@ class PasswordResetView(AuthThrottleMixin, APIView):
     def post(self, request):
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.filter(email__iexact=serializer.validated_data["email"], is_active=True).first()
+        user = User.objects.filter(email__iexact=serializer.validated_data["email"], is_active=True, is_bot=False).first()
         payload = {"detail": "If that email has an account, a reset link is on its way."}
         if user:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
